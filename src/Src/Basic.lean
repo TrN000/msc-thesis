@@ -82,6 +82,13 @@ example :
   · exact hb
 
 
+theorem null_imp_nonnondeg
+    [Nontrivial V] [LinearOrder K] [IsStrictOrderedRing K] :
+    n = 0 → ¬ n.Nondegenerate := by
+  intro hn hnd
+  apply LinearMap.BilinForm.Nondegenerate.ne_zero hnd
+  assumption
+
 
 end Nullform
 
