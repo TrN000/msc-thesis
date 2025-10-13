@@ -220,6 +220,24 @@ lemma ker_imp_nullform :
   rw [basis_selforthogonal_iff_in_kernel _ _ _] at hi
   simpa [hi]
 
+-- define set of basis vectors that lie in the kernel
+variable [DecidablePred fun i : n => b (v i) (v i) = 0]
+def A : Finset n :=  Finset.univ.filter (fun i => b (v i) (v i) = 0)
+
+lemma span_A_subset_kernel
+    [DecidableEq E]
+    (h : b.iIsOrtho v) :
+    Submodule.span K ((A v b).image v) ≤ LinearMap.ker b := by
+  rw [Submodule.span_le]
+  intro w hw
+  rcases Finset.mem_image.1 hw with ⟨i, hi, hiw⟩
+  simp at hw
+  simp
+  rw [← hiw]
+  apply ker_imp_nullform
+  simp [A] at hi
+  assumption
+
 
 
 end SeparateKernel
