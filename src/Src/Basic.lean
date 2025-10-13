@@ -184,8 +184,8 @@ theorem complement_kernel_nondegenerate :
 theorem zero_on_kernel :
     b.restrict (LinearMap.ker b) = 0 := by
   ext x y
-  simp
-
+  simp only [BilinForm.restrict_apply, LinearMap.map_coe_ker, LinearMap.domRestrict_apply,
+    LinearMap.zero_apply]
 
 
 
@@ -197,7 +197,7 @@ theorem le_antisymm' (x y : ℕ) (hxy : x ≤ y) (hyx : y ≤ x) : x = y := by
 
 example (p : ℕ) (hp : Prime p) : 1 ∣ p := by
   use p
-  simp
+  simp only [one_mul]
 
 
 
