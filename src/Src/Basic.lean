@@ -230,12 +230,11 @@ lemma span_A_subset_kernel
     Submodule.span K ((A v b).image v) ≤ LinearMap.ker b := by
   rw [Submodule.span_le]
   intro w hw
-  rcases Finset.mem_image.1 hw with ⟨i, hi, hiw⟩
-  simp at hw
-  simp
+  rcases Finset.mem_image.mp hw with ⟨i, hi, hiw⟩
+  simp only [SetLike.mem_coe, LinearMap.mem_ker]
   rw [← hiw]
   apply ker_imp_nullform
-  simp [A] at hi
+  simp only [A, Finset.mem_filter, Finset.mem_univ, true_and] at hi
   assumption
 
 
