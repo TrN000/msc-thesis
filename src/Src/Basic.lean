@@ -201,6 +201,29 @@ example (p : ℕ) (hp : Prime p) : 1 ∣ p := by
 
 
 
+/-!
+  In this section we show that we can treat kernel of a bilinear map separately
+  from the rest of the form.
+-/
+section SeparateKernel
+
+open Module
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [NeZero (2 : K)]
+variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable (b : BilinForm K E) (hb : b.IsSymm)
+variable {n : Type*} [Fintype n] (v : Basis n K E) (b : BilinForm K E)
+
+lemma ker_imp_nullform :
+    ∀ i, b (v i) (v i) = 0 → b (v i) = 0 := by
+  intro i hi
+  rw [basis_selforthogonal_iff_in_kernel _ _ _] at hi
+  simpa [hi]
+
+
+
+end SeparateKernel
+
 -- variable {E : Type*} [AddCommMonoid E] [Module ℝ E]
 
 
