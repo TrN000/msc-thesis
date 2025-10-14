@@ -185,14 +185,14 @@ theorem basis_selforthogonal_iff_in_kernel :
 
 
 
-theorem complement_kernel_nondegenerate :
-    (b.restrict (b.orthogonal (LinearMap.ker b))).Nondegenerate := by
-  intro v
-  simp
-  intro h
-  -- I don't think this works. Is the kernel in its own orth complement?
-  -- It's certainly true on E/ker(b), but this doesn't hold
-  sorry
+theorem complement_kernel_nondegenerate
+    (W : Submodule K E) (h : IsCompl W (LinearMap.ker b))
+    (hsymm : LinearMap.IsSymm b) :
+    (b.restrict W).Nondegenerate := by
+  rw [LinearMap.BilinForm.restrict]
+  have h2 := LinearMap.IsSymm.nondegenerate_restrict_of_isCompl_ker hsymm h
+  cases h2
+  assumption -- ?? how
 
 
 theorem zero_on_kernel :
