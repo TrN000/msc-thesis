@@ -125,11 +125,11 @@ variable (b : BilinForm K E)
 -- lemma nonzero_of_nondegenerate (x : V) (h : NeZero x) :
 -/
 
-universe w
+variable {n : Type*} [Fintype n]
 open Module
 
 theorem square_obasis_nonzero
-    {n : Type w} {v : Basis n K E} (h : b.iIsOrtho v) (hb : b.Nondegenerate) :
+    {v : Basis n K E} (h : b.iIsOrtho v) (hb : b.Nondegenerate) :
     ∀ i, b (v i) (v i) ≠ 0 := by
   intro i
   have ho : ¬b.IsOrtho (v i) (v i) := by
@@ -137,6 +137,23 @@ theorem square_obasis_nonzero
     assumption
   rw [b.isOrtho_def] at ho
   assumption
+
+theorem nondeg_of_nonnull_basis
+    {v : Basis n K E} (ortho : b.iIsOrtho v) (h : ∀ i, b (v i) (v i) ≠ 0) :
+    b.Nondegenerate := by
+  apply ortho.nondegenerate_iff_not_isOrtho_basis_self.mpr
+  simp at h
+  intro i
+  specialize h i
+  intro H
+  exact h H
+
+theorem nondeg_iff_nonnull_on_basis
+    {v : Basis n K E} (ortho : b.iIsOrtho v) :
+    (∀ i, b (v i) (v i) ≠ 0) ↔ b.Nondegenerate := by
+  refine ⟨nondeg_of_nonnull_basis (b := b) ortho, ?_⟩
+  intro hb
+  exact square_obasis_nonzero (b := b) ortho hb
 
 theorem square_obasis_ltzero_or_gtzero
     {n : Type w} {v : Basis n K E} (h : b.iIsOrtho v) (hb : b.Nondegenerate) :
