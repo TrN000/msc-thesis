@@ -153,7 +153,7 @@ theorem nondeg_iff_nonnull_on_basis
   exact square_obasis_nonzero (b := b) ortho hb
 
 theorem square_obasis_ltzero_or_gtzero
-    {n : Type w} {v : Basis n K E} (h : b.iIsOrtho v) (hb : b.Nondegenerate) :
+    {v : Basis n K E} (h : b.iIsOrtho v) (hb : b.Nondegenerate) :
     ∀ i, b (v i) (v i) > 0 ∨ b (v i) (v i) < 0 := by
   simp
   intro i
