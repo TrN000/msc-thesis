@@ -47,8 +47,6 @@ theorem symm_eq_zero_of_alternating : symm_eq_zero g → alternating g := by
   -- rw [LinearMap.BilinForm.add_left, LinearMap.BilinForm.add_right,
   -- LinearMap.BilinForm.add_right] at Hsymm_sum
 
-#check LinearOrderedField -- should I use this? it's how it's done in Lang, but usually ℝ is used.
-
 section Nullform
 
 variable {K : Type*} [Field K] [NeZero (2 : K)]
