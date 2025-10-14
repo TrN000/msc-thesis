@@ -74,11 +74,10 @@ example :
   have H2 : NeZero (2 : K) := inferInstance
   simp at H4xy
   rcases H4xy with ha | hb
-  by_contra
-  · have h4 : (4 : K) ≠ 0 := by convert mul_ne_zero H2.ne H2.ne ; norm_num
-    contradiction
-  · exact hb
-
+  · by_contra
+    · have h4 : (4 : K) ≠ 0 := by convert mul_ne_zero H2.ne H2.ne ; norm_num
+      contradiction
+  · assumption
 
 theorem null_imp_nonnondeg
     [Nontrivial V] [LinearOrder K] [IsStrictOrderedRing K] :
