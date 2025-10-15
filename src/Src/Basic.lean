@@ -2,6 +2,7 @@ import Mathlib.LinearAlgebra.BilinearMap
 import Mathlib.LinearAlgebra.BilinearForm.Basic
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+import Mathlib.LinearAlgebra.Basis.Defs
 import Mathlib.Data.Real.Basic
 open LinearMap (BilinForm)
 /-!
@@ -100,7 +101,7 @@ variable {V : Type*} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
 
 
 -- Ordered field
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [NeZero (2 : K)]
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] -- [NeZero (2 : K)]
 -- fin. dim. vsp. over this ordered field
 variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
 
@@ -243,7 +244,7 @@ section SeparateKernel
 
 open Module
 
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [NeZero (2 : K)]
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
 variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
 variable (b : BilinForm K E) (hb : b.IsSymm)
 variable {n : Type*} [Fintype n] (v : Basis n K E) (b : BilinForm K E)
@@ -273,6 +274,38 @@ lemma span_A_subset_kernel
   apply ker_imp_nullform v b symm h
   simp only [A, Finset.mem_filter, Finset.mem_univ, true_and] at hi
   assumption
+
+lemma kernel_imp_nonkernel_basis_coeff_zero
+    (w : E) (hw : w ∈ LinearMap.ker b) (ortho : b.iIsOrtho v) :
+    ∀ i, i ∉ A v b → (v.repr w) i = (0 : K) := by
+  intro i hi
+  simp only [A, Finset.mem_filter, Finset.mem_univ, true_and] at hi
+  push_neg at hi
+  have h : b (v i) ≠ 0 := by
+    intro h₀
+    rw [h₀] at hi
+    simp only [LinearMap.zero_apply, ne_eq, not_true_eq_false] at hi
+  have hw0 : b w = 0 := LinearMap.mem_ker.mp hw
+  have w_eq : ∑ i , (v.repr w) i • v i = w :=  v.sum_repr w
+  apply congr_arg b at w_eq
+  rw [map_sum b] at w_eq
+  simp only [map_smul] at w_eq
+  rw [hw0] at w_eq
+  set B : Finset n := (Finset.univ : Finset n).filter (fun i => b (v i) (v i) ≠ 0)
+  have hB : B ⊆ Finset.univ := by simp
+  rw [← Finset.sum_subset hB _] at w_eq
+  swap
+  · simp [B]
+    intro j hj
+    apply ker_imp_nullform _ _ _ at hj
+    right
+    assumption'
+  · simp [B] at w_eq
+
+    sorry
+
+
+
 
 
 
