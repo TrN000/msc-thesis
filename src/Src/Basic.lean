@@ -170,12 +170,32 @@ theorem card_selforthogonal_eq_dim_ker
       finrank K (LinearMap.ker b) := by
   sorry
 
-theorem basis_selforthogonal_iff_in_kernel :
+theorem span_iselforthogonal_subset_kernel -- this seems even harder
+    [DecidableEq E]
+    (h : b.iIsOrtho v) :
+    Submodule.span K (v '' (Finset.univ.filter fun i => b (v i) (v i) = 0))
+    = LinearMap.ker b := by
+  simp
+  sorry
+
+theorem basis_selforthogonal_iff_in_kernel
+    (ortho : b.iIsOrtho v) (symm : b.IsSymm) :
     ∀ i, b (v i) (v i) = 0 ↔ (v i) ∈ (LinearMap.ker b) := by
   intro i
   constructor
-  · simp
+  · contrapose!
     intro h
+    obtain ⟨W, hW⟩ := Submodule.exists_isCompl (LinearMap.ker b: Submodule K E)
+    obtain ⟨w, hw, n, hn, h'⟩ : ∃ w ∈ W, ∃ n ∈ LinearMap.ker b, w + n = v i := by
+      rw [← Submodule.mem_sup, hW.symm.sup_eq_top]; exact Submodule.mem_top
+    simp at hn
+    simp [← h', hn]
+    nth_rw 2 [symm.eq]
+    simp [hn]
+
+
+
+
     -- b restricted to the complement of the kernel is nondeg (not true, see below)
     -- by cases: if v i is in the kernel, job done; else b is nondeg on K v i??
     sorry
@@ -228,11 +248,14 @@ variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
 variable (b : BilinForm K E) (hb : b.IsSymm)
 variable {n : Type*} [Fintype n] (v : Basis n K E) (b : BilinForm K E)
 
-lemma ker_imp_nullform :
+lemma ker_imp_nullform
+    (hb : b.IsSymm) (ortho : b.iIsOrtho v) :
     ∀ i, b (v i) (v i) = 0 → b (v i) = 0 := by
   intro i hi
   rw [basis_selforthogonal_iff_in_kernel _ _ _] at hi
-  simpa [hi]
+  assumption'
+
+
 
 -- define set of basis vectors that lie in the kernel
 variable [DecidablePred fun i : n => b (v i) (v i) = 0]
@@ -240,14 +263,14 @@ def A : Finset n :=  Finset.univ.filter (fun i => b (v i) (v i) = 0)
 
 lemma span_A_subset_kernel
     [DecidableEq E]
-    (h : b.iIsOrtho v) :
+    (h : b.iIsOrtho v) (symm : b.IsSymm) :
     Submodule.span K ((A v b).image v) ≤ LinearMap.ker b := by
   rw [Submodule.span_le]
   intro w hw
   rcases Finset.mem_image.mp hw with ⟨i, hi, hiw⟩
   simp only [SetLike.mem_coe, LinearMap.mem_ker]
   rw [← hiw]
-  apply ker_imp_nullform
+  apply ker_imp_nullform v b symm h
   simp only [A, Finset.mem_filter, Finset.mem_univ, true_and] at hi
   assumption
 
