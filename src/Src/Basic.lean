@@ -315,10 +315,32 @@ lemma kernel_imp_nonkernel_basis_coeff_zero
 
 end SeparateKernel
 
--- variable {E : Type*} [AddCommMonoid E] [Module ℝ E]
 
+section SquaringBothSides
 
+open Module
 
--- theorem sylvester (B: LinearMap.BilinForm ℝ E) (nonDeg: LinearMap.BilinForm.Nondegenerate B) :
---   ∃ r ∈ ℕ, |positive v| = r := by
---   sorry
+variable {K : Type*} [Field K]
+variable {E : Type*} [AddCommGroup E] [Module K E]
+variable (b : BilinForm K E) (hb : b.IsSymm)
+variable {n : Type*} (v : Basis n K E) (b : BilinForm K E)
+
+theorem squaring_both_sides
+    (ortho : b.iIsOrtho v) (A : Set n) [Fintype A] (x : n → K) :
+    b (∑ i ∈ A, (x i) • (v i)) (∑ i ∈ A, (x i) • (v i))
+      = (∑ i ∈ A, (x i)^2  • (b (v i) (v i)) ) := by
+  simp
+  have h := LinearMap.BilinForm.iIsOrtho_def.mp ortho
+  have inner :
+      ∀ i ∈ A.toFinset, (∑ j ∈ A.toFinset, (x j) * (b (v j) (v i))) = (x i) * (b (v i) (v i)) := by
+    intro i hi
+    apply Finset.sum_eq_single i
+    intro k hk hk_ne_i
+    have : b (v k) (v i) = 0 := ortho hk_ne_i
+    simp [this]
+    exact fun a ↦ False.elim (a hi)
+  apply Finset.sum_congr rfl
+  intro x_1 hx_1
+  rwa [inner x_1, ← mul_assoc, pow_two]
+
+end SquaringBothSides
