@@ -194,9 +194,6 @@ theorem basis_selforthogonal_iff_in_kernel
     nth_rw 2 [symm.eq]
     simp [hn]
 
-
-
-
     -- b restricted to the complement of the kernel is nondeg (not true, see below)
     -- by cases: if v i is in the kernel, job done; else b is nondeg on K v i??
     sorry
@@ -276,7 +273,7 @@ lemma span_A_subset_kernel
   assumption
 
 lemma kernel_imp_nonkernel_basis_coeff_zero
-    (w : E) (hw : w ∈ LinearMap.ker b) (ortho : b.iIsOrtho v) :
+    (w : E) (hw : w ∈ LinearMap.ker b) (ortho : b.iIsOrtho v) (hb : b.IsSymm) :
     ∀ i, i ∉ A v b → (v.repr w) i = (0 : K) := by
   intro i hi
   simp only [A, Finset.mem_filter, Finset.mem_univ, true_and] at hi
@@ -297,13 +294,20 @@ lemma kernel_imp_nonkernel_basis_coeff_zero
   swap
   · simp [B]
     intro j hj
-    apply ker_imp_nullform _ _ _ at hj
+    apply ker_imp_nullform _ _ hb at hj
     right
     assumption'
-  · simp [B] at w_eq
-
-    sorry
-
+  · simp at hB
+    let apply_vi := congr_arg (fun φ => φ (v i)) w_eq
+    simp at apply_vi
+    have hᵢ : i ∈ B := by
+      simp only [ne_eq, Finset.mem_filter, Finset.mem_univ, hi, not_false_eq_true, and_self, B]
+    have hx : ∀ x ∈ B, x ≠ i → (v.repr w) x * (b (v x)) (v i) = 0 := by
+      intro x hxB x_ne_i
+      simp only [LinearMap.BilinForm.iIsOrtho_def.mp ortho x i x_ne_i, mul_zero]
+    rw [Finset.sum_eq_single i hx] at apply_vi
+    · exact (mul_eq_zero_iff_right hi).mp apply_vi
+    exact fun a ↦ hx i hᵢ fun a_1 ↦ a hᵢ
 
 
 
