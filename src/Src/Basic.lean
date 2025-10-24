@@ -344,3 +344,51 @@ theorem squaring_both_sides
   rwa [inner x_1, ← mul_assoc, pow_two]
 
 end SquaringBothSides
+
+
+section Sylvester
+
+open Module
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E] [DecidableEq E]
+variable (b : BilinForm K E) (hb : b.IsSymm)
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+variable (b1 b2 : Basis n K E)
+
+noncomputable def pS : n → Prop := fun i => b (b1 i) (b1 i) ≥ 0
+noncomputable def pT : n → Prop := fun i => b (b2 i) (b2 i) ≤ 0
+
+local notation "pS" => pS b b1
+local notation "pT" => pT b b2
+
+noncomputable def S [DecidablePred pS] : Finset n := (Finset.univ : Finset n).filter pS
+noncomputable def T := (Finset.univ : Finset n).filter fun i => b (b2 i) (b2 i) ≤ 0
+
+noncomputable def fS [DecidablePred pS] : (S b b1) → E := fun (i : S b b1) => b1 i
+noncomputable def fT [DecidablePred pT] : (T b b2) → E := fun (i : T b b2) => b2 i
+-- noncomputable def fT := fun i => b2 i
+
+noncomputable def sumST [DecidablePred pS] [DecidablePred pT] :
+    (S b b1) ⊕ (T b b2) → E := Sum.elim (fS b b1) (fT b b2)
+
+noncomputable def Basis.isotropic_indices (v : Basis n K E) (b : BilinForm K E) : Finset n :=
+  (Finset.univ : Finset n).filter fun i => b (v i) (v i) = 0
+
+noncomputable def Module.Basis.nonisotropic_indices
+  (v : Basis n K E) (b : BilinForm K E) : Finset n :=
+  (Finset.univ : Finset n).filter fun i => b (v i) (v i) ≠ 0
+
+-- noncomputable def Module.Basis.nonisotropic_vectors
+--   (v : Basis n K E) (b : BilinForm K E) : n → E :=
+--   nonisotropic_indices v b
+
+local notation "nonIso" => Module.Basis.nonisotropic_indices
+
+theorem foo_same_index
+    (b1 b2 : Basis n K E) [DecidablePred pS] [DecidablePred pT] :
+  LinearIndependent K (sumST b b1 b2) := by
+  sorry
+
+end Sylvester
