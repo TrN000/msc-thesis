@@ -325,6 +325,7 @@ variable {E : Type*} [AddCommGroup E] [Module K E]
 variable (b : BilinForm K E) (hb : b.IsSymm)
 variable {n : Type*} (v : Basis n K E) (b : BilinForm K E)
 
+/-- implements the 'square both sides' argument from Lang's proof. -/
 theorem squaring_both_sides
     (ortho : b.iIsOrtho v) (A : Set n) [Fintype A] (x : n → K) :
     b (∑ i ∈ A, (x i) • (v i)) (∑ i ∈ A, (x i) • (v i))
@@ -346,6 +347,7 @@ theorem squaring_both_sides
 end SquaringBothSides
 
 
+/-- attempting Sylvester's theorem (or a critical part of the proof), unsuccessfully.-/
 section Sylvester
 
 open Module
@@ -363,14 +365,16 @@ noncomputable def pT : n → Prop := fun i => b (b2 i) (b2 i) ≤ 0
 local notation "pS" => pS b b1
 local notation "pT" => pT b b2
 
-noncomputable def S [DecidablePred pS] : Finset n := (Finset.univ : Finset n).filter pS
+instance : DecidablePred pS := inferInstance
+instance : DecidablePred pT := inferInstance
+noncomputable def S : Finset n := (Finset.univ : Finset n).filter pS
 noncomputable def T := (Finset.univ : Finset n).filter fun i => b (b2 i) (b2 i) ≤ 0
 
-noncomputable def fS [DecidablePred pS] : (S b b1) → E := fun (i : S b b1) => b1 i
-noncomputable def fT [DecidablePred pT] : (T b b2) → E := fun (i : T b b2) => b2 i
+noncomputable def fS : (S b b1) → E := fun (i : S b b1) => b1 i
+noncomputable def fT : (T b b2) → E := fun (i : T b b2) => b2 i
 -- noncomputable def fT := fun i => b2 i
 
-noncomputable def sumST [DecidablePred pS] [DecidablePred pT] :
+noncomputable def sumST :
     (S b b1) ⊕ (T b b2) → E := Sum.elim (fS b b1) (fT b b2)
 
 noncomputable def Basis.isotropic_indices (v : Basis n K E) (b : BilinForm K E) : Finset n :=
@@ -387,8 +391,72 @@ noncomputable def Module.Basis.nonisotropic_indices
 local notation "nonIso" => Module.Basis.nonisotropic_indices
 
 theorem foo_same_index
-    (b1 b2 : Basis n K E) [DecidablePred pS] [DecidablePred pT] :
-  LinearIndependent K (sumST b b1 b2) := by
+    (b1 b2 : Basis n K E) :
+    LinearIndependent K (sumST b b1 b2) := by
   sorry
 
 end Sylvester
+
+
+section VectorJoin
+
+open Module
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E] [DecidableEq E]
+variable (b : BilinForm K E) (hb : b.IsSymm)
+variable {n : Type*} [Fintype n] [DecidableEq n]
+variable (b1 b2 : Basis n K E)
+
+open Module
+
+def joint := {i // b (b1 i) (b1 i) > 0} ⊕ {j // b (b2 j) (b2 j) < 0}
+noncomputable def jointf : joint b b1 b2 → E := Sum.elim (fun i => b1 i.1) (fun j => b2 j.1)
+
+lemma sum_sumtype {α β γ : Type} [AddCommMonoid γ]
+  [Fintype α] [Fintype β] (f : α ⊕ β → γ) :
+  ∑ x : α ⊕ β, f x =
+    (∑ a : α, f (Sum.inl a)) + (∑ b : β, f (Sum.inr b)) := by
+  rw [Fintype.sum_sum_type]
+
+lemma sum_sumtype_on_subsets {α β γ : Type*} [AddCommMonoid γ]
+    [Fintype α] [Fintype β] (f : α ⊕ β → γ) (s : Finset (α ⊕ β)) :
+    ∑ x ∈ s, f x =
+      ∑ a ∈ s.toLeft, f (Sum.inl a) + ∑ b ∈ s.toRight, f (Sum.inr b) := by
+  have h := Fintype.sum_sum_type f
+  sorry
+
+
+set_option diagnostics true
+instance : Fintype (joint b b1 b2) := inferInstance
+
+lemma split_sum_joint (s : Finset (joint b b1 b2)) (coeff : (joint b b1 b2) → K)
+    (hzero : ∀i, i ∉ s → coeff i = 0):
+    ∑ i ∈ s, (coeff i) • jointf b b1 b2 i
+    =
+    ∑ a ∈ s.toLeft,
+      coeff (Sum.inl a) • b1 a
+    +
+    ∑ b ∈ s.toRight,
+      coeff (Sum.inr b) • b2 b := by
+  have s_univ : s ⊆ (Finset.univ) := by simp
+  have expanded_sum :
+    ∑ i, (coeff i) • jointf b b1 b2 i = ∑ i ∈ s, (coeff i) • jointf b b1 b2 i := by
+    rw [Finset.sum_subset s_univ]
+    intro x hx hxs
+    apply hzero at hxs
+    simp [hxs]
+  rw [← expanded_sum]
+  rw [Fintype.sum_sum_type (fun x => (coeff x) • jointf b b1 b2 x)]
+  sorry
+
+
+theorem joint_linindep :
+    LinearIndependent K (jointf b b1 b2) := by
+  rw [linearIndependent_iff'']
+  intro s coeff h_non_s
+  simp [jointf]
+  intro hsum_eq
+  sorry
+
+end VectorJoin
