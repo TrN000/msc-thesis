@@ -461,3 +461,83 @@ theorem joint_linindep :
   sorry
 
 end VectorJoin
+
+
+/- Statements about sums over sum types. 2nd attempt. -/
+section SumTypes
+
+/--
+  For a sum type, `α ⊕ β`, a sum over it, `∑ i` (i ∈ α ⊕ β), and a subset of it, `s ⊆ α ⊕ β`,
+  it should be possible to split the sum along both the type and the set.
+  For the type: `∑ i = ∑ a ∈ α + ∑ b ∈ β`.
+  For the set:  `∑ i = ∑ i ∈ s + ∑ j ∉ s`.
+  And naturally also along both at once.
+
+  The following example is exactly `Fintype.sum_sum_type`. A theorem like `Fintype.sum_sum_set`
+  ought to exist. And the immediate consequences `_type_set` and `_set_type` also, and should be
+  equal (propositionally).
+-/
+example {α β γ : Type} [AddCommMonoid γ] [Fintype α] [Fintype β] (f : α ⊕ β → γ) :
+  ∑ x : α ⊕ β, f x = (∑ a : α, f (Sum.inl a)) + (∑ b : β, f (Sum.inr b)) := by
+  rw [Fintype.sum_sum_type]
+
+variable (ι κ : Type) [Fintype ι] [Fintype κ]
+-- def θ := ι ⊕ κ
+-- #check θ
+-- instance (ι κ) : Fintype (θ ι κ) := inferInstance
+
+abbrev θ := ι ⊕ κ
+#check θ
+local notation "θ" => θ ι κ
+instance : Fintype θ := inferInstance
+#check (inferInstance : Fintype θ)
+
+example (s : Finset θ) : Fintype s := by infer_instance
+
+variable {γ : Type*} [AddCommMonoid γ]
+-- can't infer instance of HasCompl (Finset θ)
+#search "HasCompl for Finsets?"
+#check (inferInstance : HasCompl (Finset θ))
+#check (inferInstance : HasCompl (Finset ι))
+
+theorem Fintype.sum_sum_subset
+    (s : Finset θ) [Fintype s] (f : θ → γ) :
+    ∑ i, f i = ∑ i ∈ s, f i + ∑ i ∈ Finset.univ \ s, f i := by
+  sorry
+
+variable [DecidableEq ι] [DecidableEq κ] -- this was the culprit
+#check (inferInstance : HasCompl (Finset ι))
+
+theorem Fintype.sum_sum_subset'
+    (s : Finset θ) (f : θ → γ) :
+    ∑ i, f i = ∑ i ∈ s, f i + ∑ i ∉ s, f i := by
+  have h : Disjoint s sᶜ := by
+    rw [Finset.disjoint_iff_inter_eq_empty]
+    exact Finset.inter_compl s
+  rw [← Finset.sum_union h, Finset.union_compl]
+
+/- can I split sets along type? -/
+
+variable (t : Finset θ)
+#check t.toLeft
+
+/- Why are these not standard? I feel like these could be simpable. -/
+variable {α β : Type} [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β] (u : Finset (α ⊕ β))
+theorem toLeft_compl : uᶜ.toLeft = u.toLeftᶜ := by ext ; simp
+theorem toRight_compl : uᶜ.toRight = u.toRightᶜ := by ext ; simp
+
+
+theorem Fintype.sum_sum_subset_type
+    (s : Finset θ) (f : θ → γ) [CommMonoid γ] :
+    ∑ i, f i =
+      ∑ i ∈ s.toLeft, f (Sum.inl i) + ∑ i ∉ s.toLeft, f (Sum.inl i)  +
+      ∑ i ∈ s.toRight, f (Sum.inr i) + ∑ i ∉ s.toRight, f (Sum.inr i)
+  := by
+  rw [Fintype.sum_sum_subset' ι κ s,
+      Finset.sum_sum_eq_sum_toLeft_add_sum_toRight s f,
+      Finset.sum_sum_eq_sum_toLeft_add_sum_toRight sᶜ f]
+  abel_nf
+  simp [toLeft_compl, toRight_compl]
+
+end SumTypes
+
