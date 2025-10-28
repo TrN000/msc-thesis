@@ -392,7 +392,7 @@ noncomputable def Module.Basis.nonisotropic_indices
 
 local notation "nonIso" => Module.Basis.nonisotropic_indices
 
-theorem foo_same_index
+theorem special_set_linindep
     (b1 b2 : Basis n K E) :
     LinearIndependent K (sumST b b1 b2) := by
   sorry
