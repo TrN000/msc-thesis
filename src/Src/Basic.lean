@@ -425,8 +425,7 @@ lemma sum_sumtype_on_subsets {α β γ : Type*} [AddCommMonoid γ]
     [Fintype α] [Fintype β] (f : α ⊕ β → γ) (s : Finset (α ⊕ β)) :
     ∑ x ∈ s, f x =
       ∑ a ∈ s.toLeft, f (Sum.inl a) + ∑ b ∈ s.toRight, f (Sum.inr b) := by
-  have h := Fintype.sum_sum_type f
-  sorry
+  rw [← Finset.sum_disjSum, Finset.toLeft_disjSum_toRight]
 
 
 set_option diagnostics true
