@@ -16,6 +16,7 @@ theorem in terms of symmetric bilinear maps.
 
 /- using selected parts of Lang's chapter XV as exercises -/
 
+section Intro
 variable {k : Type*} [Field k]
  /- actually need ring with 2x ≠ 0 , use ℝ for now.
  integral domains? In the case of fields, char(k) ≠ 2 is sufficient.
@@ -47,6 +48,7 @@ theorem symm_eq_zero_of_alternating : symm_eq_zero g → alternating g := by
   linarith
   -- rw [LinearMap.BilinForm.add_left, LinearMap.BilinForm.add_right,
   -- LinearMap.BilinForm.add_right] at Hsymm_sum
+end Intro
 
 section Nullform
 
