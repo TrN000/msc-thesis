@@ -4,6 +4,7 @@ import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Basis.Defs
 import Mathlib.Data.Real.Basic
+import Mathlib.Data.Finset.Lattice.Basic   -- gives complement on Finset
 open LinearMap (BilinForm)
 /-!
 # Sylvester's Theorem
@@ -410,7 +411,6 @@ variable (b : BilinForm K E) (hb : b.IsSymm)
 variable {n : Type*} [Fintype n] [DecidableEq n]
 variable (b1 b2 : Basis n K E)
 
-open Module
 
 def joint := {i // b (b1 i) (b1 i) > 0} ⊕ {j // b (b2 j) (b2 j) < 0}
 noncomputable def jointf : joint b b1 b2 → E := Sum.elim (fun i => b1 i.1) (fun j => b2 j.1)
@@ -540,4 +540,183 @@ theorem Fintype.sum_sum_subset_type
   simp [toLeft_compl, toRight_compl]
 
 end SumTypes
+
+section SpecialSet
+
+open Module
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E] [DecidableEq E]
+variable (b : BilinForm K E)
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-
+  Retreatment of the special set that's central to one step of the proof of Lang.
+
+  For a bilinear form `b` and two bases `v`, `v'`, the set
+  ```
+    s := {i // b vi vi > 0} ⊕ {j // b v'j v'j < 0} ⊆ n ⊕ n
+  ```
+  is linearly independent.
+
+
+  Figured out why this set doesn't for for LinearIndependent K s
+    s := {i // b (v i) (v i) > 0} ⊕ {j : n // b (v' j) (v' j) < 0}
+  because this is a sumtype of _indices_, not vectors. Need to figure out how
+  to map them to maps into E.
+
+ -/
+variable (v v' : Basis n K E)
+abbrev s := {i // b (v i) (v i) > 0} ⊕ {j : n // b (v' j) (v' j) < 0}
+#check (s b v v')
+def special_map : (s b v v') → E := fun i => Sum.elim v v' i
+def special_map' : ( {i // b (v i) (v i) > 0} ⊕ {j : n // b (v' j) (v' j) < 0} ) → E := fun i => Sum.elim v v' i
+noncomputable def special_map'' :
+  ( {i // b (v i) (v i) > 0} ⊕ {j : n // b (v' j) (v' j) < 0} ) → E :=
+  fun i => Sum.elim (fun ⟨j, _⟩ => v j) (fun ⟨j,_⟩ => v' j) i
+
+/- essentially the same as `squaring_both_sides`, but in the form I need below.
+   Doesn't work, because the types are ever so slightly different. Doing it
+   manually in the middle of the proof. -/
+lemma diagonal_sum_of_ortho
+    (v : Basis n K E) (ortho : b.iIsOrtho v) (s : Finset n) (coeff coeff' : n → K) :
+    ∑ i ∈ s, coeff i * ∑ j ∈ s, coeff' j * b (v j) (v i) =
+      ∑ i ∈ s, coeff i * coeff' i * b (v i) (v i) := by
+  have inner :
+      ∀ i ∈ s, (∑ j ∈ s, (coeff' j) * (b (v j) (v i))) = (coeff' i) * (b (v i) (v i)) := by
+    intro i hi
+    apply Finset.sum_eq_single i
+    intro k hk hk_ne_i
+    have : b (v k) (v i) = 0 := ortho hk_ne_i
+    simp [this]
+    exact fun a ↦ False.elim (a hi)
+  apply Finset.sum_congr rfl
+  intro i hi
+  rwa [inner i, ← mul_assoc]
+
+lemma eq_zero_of_le_ge_eq
+    {a b : K} (le : 0 ≤ a) (ge : 0 ≥ b) (eq : a = b) :
+    a = 0 ∧ b = 0 := by
+  constructor
+  · rw [← eq] at ge
+    symm
+    apply le_antisymm le ge
+  · rw [eq] at le
+    symm
+    apply le_antisymm le ge
+
+theorem special_sum
+    (v v' : Basis n K E)
+    (ortho : b.iIsOrtho v) (ortho' : b.iIsOrtho v') :
+    LinearIndependent K ( special_map'' b v v' ) := by
+  rw [linearIndependent_iff'']
+  intro s coeff h_non_s
+  simp only [special_map'']
+  intro hsum_eq
+  rw [Finset.sum_sum_eq_sum_toLeft_add_sum_toRight s _] at hsum_eq
+  simp at hsum_eq
+  rw [add_eq_zero_iff_eq_neg] at hsum_eq
+  have h := congr_arg (fun w => b w w) hsum_eq
+  simp only [map_sum, map_smul, LinearMap.coeFn_sum, Finset.sum_apply, LinearMap.smul_apply,
+    smul_eq_mul, map_neg, LinearMap.neg_apply, mul_neg, Finset.sum_neg_distrib, neg_neg] at h
+  have inner :
+    ∀ i ∈ s.toLeft,
+      (∑ j ∈ s.toLeft, (coeff (Sum.inl j)) * (b (v j) (v i))) =
+      (coeff (Sum.inl i)) * (b (v i) (v i)) := by
+    intro i his
+    apply Finset.sum_eq_single i
+    intro k hk hk_ne_i
+    have : b (v k) (v i) = 0 := ortho (Subtype.coe_ne_coe.mpr hk_ne_i)
+    simp [this]
+    simp
+    intro hi_ni_s
+    left
+    apply h_non_s
+    assumption
+  have outer :
+    ∑ x ∈ s.toLeft, coeff (Sum.inl x) * ∑ x_1 ∈ s.toLeft, coeff (Sum.inl x_1) * (b (v ↑x_1)) (v ↑x)
+      = ∑ x ∈ s.toLeft, coeff (Sum.inl x) * coeff (Sum.inl x) * (b (v ↑x)) (v ↑x) := by
+    apply Finset.sum_congr rfl
+    intro x hx
+    rwa [inner x, ← mul_assoc]
+  rw [outer] at h
+  have inner :
+    ∀ i ∈ s.toRight,
+      (∑ j ∈ s.toRight, (coeff (Sum.inr j)) * (b (v' j) (v' i))) =
+      (coeff (Sum.inr i)) * (b (v' i) (v' i)) := by
+    intro i his
+    apply Finset.sum_eq_single i
+    intro k hk hk_ne_i
+    have : b (v' k) (v' i) = 0 := ortho' (Subtype.coe_ne_coe.mpr hk_ne_i)
+    simp [this]
+    simp
+    intro hi_ni_s
+    left
+    apply h_non_s
+    assumption
+  have outer :
+    ∑ x ∈ s.toRight, coeff (Sum.inr x)
+      * ∑ x_1 ∈ s.toRight, coeff (Sum.inr x_1) * (b (v' ↑x_1)) (v' ↑x)
+      = ∑ x ∈ s.toRight, coeff (Sum.inr x) * coeff (Sum.inr x) * (b (v' ↑x)) (v' ↑x) := by
+    apply Finset.sum_congr rfl
+    intro x hx
+    rwa [inner x, ← mul_assoc]
+  rw [outer] at h
+  have left_ge_zero :
+    ∑ x ∈ s.toLeft, coeff (Sum.inl x) * coeff (Sum.inl x) * (b (v ↑x)) (v ↑x) ≥ 0 := by
+    apply Finset.sum_nonneg
+    intro i hi
+    rw [mul_comm]
+    apply mul_nonneg
+    · simpa using le_of_lt (Subtype.prop i)
+    · rw [← pow_two]
+      apply sq_nonneg
+  have right_le_zero :
+    ∑ x ∈ s.toRight, coeff (Sum.inr x) * coeff (Sum.inr x) * (b (v' ↑x)) (v' ↑x) ≤ 0 := by
+    apply Finset.sum_nonpos
+    intro i hi
+    rw [mul_comm]
+    apply mul_nonpos_iff.mpr
+    right
+    constructor
+    · exact le_of_lt (Subtype.prop i)
+    · rw [← pow_two]
+      apply sq_nonneg
+  have ⟨v_eq, v'_eq⟩ := eq_zero_of_le_ge_eq left_ge_zero right_le_zero h
+  have v_summand_zero :
+    ∀ x ∈ s.toLeft, coeff (Sum.inl x) * coeff (Sum.inl x) * (b (v ↑x)) (v ↑x) ≥ 0 := by
+    intro x hx
+    apply mul_nonneg
+    · rw [← pow_two]
+      exact sq_nonneg (coeff (Sum.inl x))
+    · exact le_of_lt (Subtype.prop x)
+  rw [Finset.sum_eq_zero_iff_of_nonneg v_summand_zero] at v_eq
+  have v'_summand_zero :
+    ∀ x ∈ s.toRight, coeff (Sum.inr x) * coeff (Sum.inr x) * (b (v' ↑x)) (v' ↑x) ≤ 0 := by
+    intro x hx
+    apply mul_nonpos_iff.mpr
+    left
+    constructor
+    · rw [← pow_two]
+      exact sq_nonneg (coeff (Sum.inr x))
+    · exact le_of_lt (Subtype.prop x)
+  rw [Finset.sum_eq_zero_iff_of_nonpos v'_summand_zero] at v'_eq
+  intro i
+  by_cases hi : i ∈ s
+  · rcases i with i | j
+    · specialize v_eq i (Finset.mem_toLeft.mpr hi)
+      have : 0 < (b (v ↑i)) (v ↑i) := by
+        exact (Subtype.prop i)
+      apply eq_zero_of_ne_zero_of_mul_right_eq_zero (ne_of_gt this) at v_eq
+      apply eq_zero_of_mul_self_eq_zero at v_eq
+      assumption
+    · specialize v'_eq j (Finset.mem_toRight.mpr hi)
+      have : (b (v' ↑j)) (v' ↑j) < 0 := by
+        exact (Subtype.prop j)
+      apply eq_zero_of_ne_zero_of_mul_right_eq_zero (ne_of_lt this) at v'_eq
+      apply eq_zero_of_mul_self_eq_zero at v'_eq
+      assumption
+  · exact h_non_s i hi
+
+end SpecialSet
 
