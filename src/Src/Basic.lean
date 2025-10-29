@@ -718,5 +718,16 @@ theorem special_sum
       assumption
   · exact h_non_s i hi
 
+theorem special_set_card_le_finrank
+    (v v' : Basis n K E)
+    (ortho : b.iIsOrtho v) (ortho' : b.iIsOrtho v') :
+    Fintype.card ({ i // (b (v i)) (v i) > 0 } ⊕ { j // (b (v' j)) (v' j) < 0 }) ≤ finrank K E := by
+  have lin_indep := special_sum b v v' ortho ortho'
+  exact lin_indep.fintype_card_le_finrank
+
+theorem basis_lt_or_gt_of_nondeg
+    (nondeg : b.Nondegenerate) :
+    ? := sorry
+
 end SpecialSet
 
