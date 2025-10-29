@@ -40,7 +40,7 @@ theorem alternating_of_0 : alternating g → symm_eq_zero g := by
 theorem symm_eq_zero_of_alternating : symm_eq_zero g → alternating g := by
   unfold symm_eq_zero alternating
   intros Hsymm x y
-  have Hsymm_sum := Hsymm (x + y) -- annoying that I can't use specialize here, as it destroys the original statement
+  have Hsymm_sum := Hsymm (x + y)
   simp at Hsymm_sum
   have Hx := Hsymm x
   have Hy := Hsymm y
