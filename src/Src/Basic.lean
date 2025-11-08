@@ -568,12 +568,15 @@ variable {n : Type*} [Fintype n]
 
  -/
 variable (v v' : Basis n K E)
-abbrev s := {i // b (v i) (v i) > 0} ⊕ {j : n // b (v' j) (v' j) < 0}
-#check (s b v v')
-def special_map : (s b v v') → E := fun i => Sum.elim v v' i
-def special_map' : ( {i // b (v i) (v i) > 0} ⊕ {j : n // b (v' j) (v' j) < 0} ) → E := fun i => Sum.elim v v' i
+
+def PosP (b : BilinForm K E) (v : Basis n K E) (i : n) : Prop :=
+  0 < b (v i) (v i)
+
+def NegP (b : BilinForm K E) (v : Basis n K E) (i : n) : Prop :=
+  b (v i) (v i) < 0
+
 noncomputable def special_map'' :
-  ( {i // b (v i) (v i) > 0} ⊕ {j : n // b (v' j) (v' j) < 0} ) → E :=
+  ( {i // PosP b v i} ⊕ {j // NegP b v' j} ) → E :=
   fun i => Sum.elim (fun ⟨j, _⟩ => v j) (fun ⟨j,_⟩ => v' j) i
 
 /- essentially the same as `squaring_both_sides`, but in the form I need below.
@@ -716,7 +719,7 @@ theorem special_sum
 theorem special_set_card_le_finrank
     (v v' : Basis n K E)
     (ortho : b.iIsOrtho v) (ortho' : b.iIsOrtho v') :
-    Fintype.card ({ i // (b (v i)) (v i) > 0 } ⊕ { j // (b (v' j)) (v' j) < 0 }) ≤ finrank K E := by
+    Fintype.card ({ i // PosP b v i } ⊕ { j // NegP b v' j }) ≤ finrank K E := by
   have lin_indep := special_sum b v v' ortho ortho'
   exact lin_indep.fintype_card_le_finrank
 
