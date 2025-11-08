@@ -733,3 +733,74 @@ theorem special_set_card_le_finrank'
 
 end SpecialSet
 
+section Card
+
+open Module
+open scoped Classical
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable (b : BilinForm K E)
+variable {n : Type*} [Fintype n]
+variable (v : Basis n K E) (ortho : b.iIsOrtho v)
+
+noncomputable def split_type :
+    n ≃ {i // PosP b v i} ⊕ {i // ¬ PosP b v i} := by
+  classical
+  exact (Equiv.sumCompl (PosP b v)).symm
+
+lemma split_card :
+    Fintype.card n = (Fintype.card {i // PosP b v i} + Fintype.card {i // ¬ PosP b v i}) := by
+  classical
+  rw [Fintype.card_congr (split_type b v)]
+  exact Fintype.card_sum
+
+lemma nonpos_iff_neg_of_nondeg
+    (nondeg : b.Nondegenerate) (ortho : b.iIsOrtho v) :
+    ∀ i, ¬ PosP b v i ↔ NegP b v i := by
+  simp [PosP]
+  intro i
+  exact ⟨fun h_le ↦ lt_of_le_of_ne h_le (square_obasis_nonzero b ortho nondeg i),
+         fun h_lt ↦ le_of_lt h_lt⟩
+
+noncomputable def split_positivity
+    (nondeg : b.Nondegenerate) (ortho : b.iIsOrtho v) :
+    n ≃ {i // PosP b v i} ⊕ {i // NegP b v i} := by
+  let eNeg := (Equiv.subtypeEquivRight (nonpos_iff_neg_of_nondeg b v nondeg ortho)).symm
+  let e := split_type b v
+  exact e.trans (Equiv.sumCongr (Equiv.refl _) eNeg.symm)
+
+lemma split_card_of_nondeg_of_ortho
+    (nondeg : b.Nondegenerate) (ortho : b.iIsOrtho v) :
+    Fintype.card n = (Fintype.card {i // PosP b v i} + Fintype.card {i // NegP b v i}) := by
+  rw [Fintype.card_congr (split_positivity b v nondeg ortho)]
+  exact Fintype.card_sum
+
+lemma split_card_of_nondeg_of_ortho'
+    (nondeg : b.Nondegenerate) (ortho : b.iIsOrtho v) :
+    finrank K E = (Fintype.card {i // PosP b v i} + Fintype.card {i // NegP b v i}) := by
+  rw [finrank_eq_card_basis v]
+  exact split_card_of_nondeg_of_ortho b v nondeg ortho
+
+theorem special_set_pos_le_pos'
+    (v v' : Basis n K E) (nondeg : b.Nondegenerate)
+    (ortho : b.iIsOrtho v) (ortho' : b.iIsOrtho v') :
+    Fintype.card { i // PosP b v i } ≤ Fintype.card { j // PosP b v' j } := by
+  have : Fintype.card n - Fintype.card { j // NegP b v' j } = Fintype.card {i // PosP b v' i} := by
+    rw [Nat.sub_eq_iff_eq_add ?_] <;> simp [split_card_of_nondeg_of_ortho b v' nondeg ortho']
+  rw [← this]
+  refine Nat.le_sub_of_add_le ?_
+  rw [← finrank_eq_card_basis v]
+  have h := special_set_card_le_finrank' b v v' ortho ortho'
+  simpa [PosP, NegP]
+
+theorem special_set_pos_eq_pos'
+    (v v' : Basis n K E) (nondeg : b.Nondegenerate)
+    (ortho : b.iIsOrtho v) (ortho' : b.iIsOrtho v') :
+    Fintype.card { i // PosP b v i } = Fintype.card { j // PosP b v' j } := by
+  have h := special_set_pos_le_pos' b v v' nondeg ortho ortho'
+  have h' := special_set_pos_le_pos' b v' v nondeg ortho' ortho
+  exact le_antisymm' _ _ h h'
+
+end Card
+
