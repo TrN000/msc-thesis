@@ -598,13 +598,7 @@ lemma diagonal_sum_of_ortho
 lemma eq_zero_of_le_ge_eq
     {a b : K} (le : 0 ≤ a) (ge : 0 ≥ b) (eq : a = b) :
     a = 0 ∧ b = 0 := by
-  constructor
-  · rw [← eq] at ge
-    symm
-    apply le_antisymm le ge
-  · rw [eq] at le
-    symm
-    apply le_antisymm le ge
+  constructor <;> linarith
 
 theorem special_sum
     (v v' : Basis n K E)
