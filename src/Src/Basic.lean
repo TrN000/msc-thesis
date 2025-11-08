@@ -544,11 +544,12 @@ end SumTypes
 section SpecialSet
 
 open Module
+open Classical
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E] [DecidableEq E]
+variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
 variable (b : BilinForm K E)
-variable {n : Type*} [Fintype n] [DecidableEq n]
+variable {n : Type*} [Fintype n]
 
 /-
   Retreatment of the special set that's central to one step of the proof of Lang.
