@@ -31,24 +31,15 @@ def alternating : Prop := ∀x y :V, g x y = - (g y x)
 
 def symm_eq_zero : Prop := ∀ x : V, g x x = 0
 
-theorem alternating_of_0 : alternating g → symm_eq_zero g := by
-  unfold alternating
-  intros Halt x
-  specialize Halt x x
-  linarith
+theorem alternating_of_0 : alternating g → symm_eq_zero g :=
+  fun Halt x => CharZero.eq_neg_self_iff.mp <| Halt x x
 
 theorem symm_eq_zero_of_alternating : symm_eq_zero g → alternating g := by
-  unfold symm_eq_zero alternating
   intros Hsymm x y
   have Hsymm_sum := Hsymm (x + y)
-  simp at Hsymm_sum
-  have Hx := Hsymm x
-  have Hy := Hsymm y
-  rw [Hx, Hy] at Hsymm_sum
-  simp at Hsymm_sum
-  linarith
-  -- rw [LinearMap.BilinForm.add_left, LinearMap.BilinForm.add_right,
-  -- LinearMap.BilinForm.add_right] at Hsymm_sum
+  rw [← eq_neg_of_add_eq_zero_left]
+  simpa [Hsymm x, Hsymm y] using Hsymm_sum
+
 end Intro
 
 section Nullform
@@ -131,13 +122,8 @@ open Module
 
 theorem square_obasis_nonzero
     {v : Basis n K E} (h : b.iIsOrtho v) (hb : b.Nondegenerate) :
-    ∀ i, b (v i) (v i) ≠ 0 := by
-  intro i
-  have ho : ¬b.IsOrtho (v i) (v i) := by
-    apply h.not_isOrtho_basis_self_of_nondegenerate
-    assumption
-  rw [b.isOrtho_def] at ho
-  assumption
+    ∀ i, b (v i) (v i) ≠ 0 :=
+  fun i => h.not_isOrtho_basis_self_of_nondegenerate hb i
 
 theorem nondeg_of_nonnull_basis
     {v : Basis n K E} (ortho : b.iIsOrtho v) (h : ∀ i, b (v i) (v i) ≠ 0) :
@@ -311,10 +297,6 @@ lemma kernel_imp_nonkernel_basis_coeff_zero
     rw [Finset.sum_eq_single i hx] at apply_vi
     · exact (mul_eq_zero_iff_right hi).mp apply_vi
     exact fun a ↦ hx i hᵢ fun a_1 ↦ a hᵢ
-
-
-
-
 
 end SeparateKernel
 
