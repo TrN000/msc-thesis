@@ -804,3 +804,56 @@ theorem special_set_pos_eq_pos'
 
 end Card
 
+
+/-!
+  This section provides theorems for splitting off a (nontrivial) vector and
+  its orthogonal complement.
+
+  For a nondegenerate symmetric bilinear form `b` on a vector space and a nontrivial vector `v`,
+  we can split the space into the span of `v` and its orthogonal complement
+
+    `(K ∙ v) ⊔ b.orthogonal (K ∙ v)`
+
+  It follows immediately that these subspaces are linearly independent
+  (`hli_of_splitOrthogonalSpan`) and span the whole space (`hsp_of_splitOrthogonalSpan`).
+ -/
+section SplitOrthogonalSpan
+
+open Module
+
+variable {K : Type*} [Field K]
+variable {E : Type*} [AddCommGroup E] [Module K E]
+variable (b : BilinForm K E)
+
+theorem hli_of_splitOrthogonalSpan
+    {v : E} (hv : b v v ≠ 0) :
+    (∀ (c : K), ∀ w ∈ b.orthogonal (K ∙ v), c • v + w = 0 → c = 0) := by
+  intro c w hw hlinc
+  have ortho : b v w = 0 := hw v (by simp only [Submodule.mem_span_singleton_self])
+  have h := congr_arg (fun y => b v y) hlinc
+  simp [ortho] at h
+  tauto
+
+theorem hsp_of_splitOrthogonalSpan
+    {v : E} (hv : b v v ≠ 0) (symm : b.IsSymm) :
+    (∀ (z : E), ∃ (c : K), z + c • v ∈ b.orthogonal (K ∙ v)) := by
+  intro x
+  let c : K := - (b x v / b v v)
+  refine ⟨c, ?_⟩
+  intro u hu -- membership in W means orthogonal to any el in span v
+  rcases Submodule.mem_span_singleton.1 hu with ⟨c', rfl⟩
+  refine BilinForm.isOrtho_def.mpr ?_
+  simp [c]
+  rw [symm.eq]
+  grind
+
+theorem ne_zero_of_nonisotropic {v : E} (hv : b v v ≠ 0) :
+    v ≠ 0 := by
+  intro hzero
+  apply hv
+  rw [hzero]
+  simp only [map_zero]
+
+end SplitOrthogonalSpan
+
+
