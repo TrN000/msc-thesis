@@ -883,3 +883,113 @@ theorem ortho_reindex
 
 end ReindexEquiv
 
+
+section Sylvester'
+
+open Module
+open scoped Classical
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable (b : BilinForm K E)
+variable {n : Type*} [Fintype n]
+variable (v : Basis n K E) (ortho : b.iIsOrtho v)
+
+lemma exists_nonzero_el_of_nontrivial_of_nondeg
+    [Nontrivial E] (nondeg : b.Nondegenerate) (symm : b.IsSymm) :
+    ∃ v, b v v ≠ 0 := by
+  by_contra! hzero
+  let ⟨m, hm⟩ := exists_ne (0 : E)
+  specialize nondeg m
+  have deg : ∀ (n : E), (b m) n = 0 := by
+    intro n
+    rw [LinearMap.BilinForm.IsSymm.polarization m n symm]
+    repeat rw [hzero]
+    simp only [sub_self, zero_div]
+  apply nondeg at deg
+  contradiction
+
+lemma exists_orthogonal_basis
+    (b : BilinForm K E) (nondeg : b.Nondegenerate) (symm : b.IsSymm) (m : ℕ) :
+    finrank K E = m →
+    ∃ (v : Basis (Fin m) K E), b.iIsOrtho v := by
+  induction' m with m h_ind generalizing E
+  -- base case
+  · intro h_dim
+    have := Module.finrank_zero_iff.1 h_dim
+    exact ⟨Module.Basis.empty (M := E), (fun i _ _ => Fin.elim0 i)⟩
+
+  -- induction step; derive preconditions for induction step
+  · intro hfinrank
+    have : Nontrivial E :=
+      nontrivial_of_finrank_eq_succ (R := K) <| (Nat.succ_eq_add_one m).symm ▸ hfinrank
+    let ⟨v, hv⟩ := exists_nonzero_el_of_nontrivial_of_nondeg b nondeg symm
+    let U := (K ∙ v)
+    let W := b.orthogonal (K ∙ v)
+    have hIsCompl : IsCompl U W := b.isCompl_span_singleton_orthogonal hv
+    have nondeg_bW : (b.restrict W).Nondegenerate := by
+      refine b.nondegenerate_restrict_of_disjoint_orthogonal symm.isRefl ?_
+      rw [LinearMap.BilinForm.orthogonal_orthogonal nondeg symm.isRefl]
+      exact hIsCompl.symm.disjoint
+    have dim_W : finrank K W = m := by
+      have dim_W' : finrank K W = finrank K E - 1 := by
+        rw [← Submodule.finrank_add_eq_of_isCompl hIsCompl,
+            ← finrank_span_singleton (K := K) (ne_zero_of_nonisotropic b hv)]
+        simp [U, add_tsub_cancel_left]
+      simpa [hfinrank] using dim_W'
+    obtain ⟨basis, hbasis⟩ := h_ind (E := W) (b.restrict W) nondeg_bW (symm.restrict W) dim_W
+
+    -- have nontrivial vector v and a basis of its orthogonal complement
+    -- now glue them together
+    let basis' := (Basis.mkFinCons (y := v) (M := E) (N := W)  basis)
+      (hli := hli_of_splitOrthogonalSpan b hv)
+      (hsp := hsp_of_splitOrthogonalSpan b hv symm)
+
+    -- induction proof
+    refine ⟨basis', BilinForm.iIsOrtho_def.mpr ?_⟩
+    intro i
+    have hv_mem : v ∈ U := Submodule.subset_span (by simp)
+    refine Fin.cases ?_ ?_
+    · intro hi
+      have ⟨i', hi'⟩ := Fin.eq_succ_of_ne_zero hi
+      have h := (basis i').property v hv_mem
+      rw [hi']
+      simp only [Basis.coe_mkFinCons, Fin.cons_zero, basis', Fin.cons_succ, Function.comp_apply]
+      simp [b.isOrtho_def] at h
+      rwa [symm.eq]
+    · intro j hij
+      by_cases h : i = 0
+      · simp [basis', h]
+        exact (basis j).property v hv_mem
+      · have ⟨i', hi'⟩ := Fin.eq_succ_of_ne_zero h
+        simp [basis']
+        rw [hi'] at ⊢ hij
+        simp only [ne_eq, Fin.succ_inj] at hij
+        simpa [Fin.cons_succ, Function.comp_apply] using hbasis hij
+
+theorem sylvester
+    (nondeg : b.Nondegenerate) (symm : b.IsSymm) :
+    ∃ r : ℕ, ∀ (v : Basis n K E),
+      b.iIsOrtho v →
+      Fintype.card { i // PosP (b := b) v i } = r
+        ∧
+      finrank K E - r = Fintype.card { i // NegP (b := b) v i } := by
+
+  obtain ⟨v₀, hv₀⟩ := exists_orthogonal_basis (m := (finrank K E)) b nondeg symm rfl
+  refine ⟨Fintype.card { i // PosP b v₀ i }, ?_⟩
+  intro v ortho
+
+  let e : n ≃ Fin (finrank K E) := Basis.indexEquivFinrank v
+  have pos_equiv : ∀ (a : n), PosP b v a ↔ PosP b (v.reindex e) (e a) := by simp [PosP]
+  have posp_reindex_invariant := Fintype.card_congr <| Equiv.subtypeEquiv e pos_equiv
+
+  rw [special_set_pos_eq_pos' b v₀ (v.reindex e) nondeg hv₀ (ortho_reindex e ortho)]
+
+  exact ⟨
+    posp_reindex_invariant,
+    Nat.sub_eq_of_eq_add' <|
+      posp_reindex_invariant ▸ split_card_of_nondeg_of_ortho' b v nondeg ortho⟩
+
+#print axioms sylvester
+
+end Sylvester'
