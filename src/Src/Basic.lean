@@ -857,3 +857,29 @@ theorem ne_zero_of_nonisotropic {v : E} (hv : b v v ≠ 0) :
 end SplitOrthogonalSpan
 
 
+/-!
+  # Equivalence of indexing sets preserves orthogonality
+-/
+section ReindexEquiv
+open Module
+variable {K E : Type*} [Field K] [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable {n : Type*} [Fintype n]
+
+noncomputable
+def Basis.indexEquivFinrank (v : Basis n K E) : n ≃ Fin (finrank K E) := by
+  classical
+  refine Fintype.equivOfCardEq ?_
+  simpa [Fintype.card_fin] using (Module.finrank_eq_card_basis v).symm
+
+theorem ortho_reindex
+    {b : BilinForm K E} {v : Basis n K E} (e : n ≃ Fin (finrank K E)) (ortho : b.iIsOrtho v) :
+    b.iIsOrtho ⇑(v.reindex e) := by
+  intro i j hij
+  have hij' : e.symm i ≠ e.symm j :=
+    fun h => hij (by simpa only [Equiv.apply_symm_apply] using congrArg e h)
+  have e_ortho := ortho hij'
+  rw [Function.onFun_apply] at ⊢ e_ortho
+  rwa [Basis.reindex_apply v e i, Basis.reindex_apply v e j]
+
+end ReindexEquiv
+
