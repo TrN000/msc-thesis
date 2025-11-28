@@ -29,6 +29,7 @@
 \newcommand{\Z}{\mathopen{}\ensuremath{\mathbb{Z}}\mathclose{}}
 \newcommand{\C}{\mathopen{}\ensuremath{\mathbb{C}}\mathclose{}}
 \newcommand{\R}{\mathopen{}\ensuremath{\mathbb{R}}\mathclose{}}
+\newcommand{\ra}{\mathopen{}\ensuremath{\rightarrow}\mathclose{}}
 
 \addbibresource{./references.bib}
 
@@ -53,6 +54,54 @@
 \end{redbox}
 
 % section Introduction (end)
+
+\section{simply typed lambda calculus as a model of higher order logic}\label{sec:simply_typed_lambda_calculus_as_a_model_of_higher_order_logic} % (fold)
+
+The formulation of simple type theory resembles models\footnote{in the strict sense of the definition of model theory for set theory} where models of first order logic formulas are built from sets, but using ((many?) sorted?) expressions from lambda calculus. 
+
+%% TODO: does it matter that we use higher order logic or is it fine, because we built the higher order from first order?
+
+%% TODO: also possible to build equivalently using `=` as definition and construct other terms from it.
+
+We build the axiom of choice by a choice operator $\varepsilon_{\alpha}$ of type $(\alpha \ra Prop) \ra \alpha$.
+So for any predicate $P\ : \ (\alpha \ra Prop)$, $\varepsilon_{\alpha} P$ chooses an $x$ such that $Px$.
+It is convenient to hold a double viewpoint, with $P$ as a function on the type $\alpha$ and another where $P$ is viewed as a subset of the set of all elements of type $\alpha$, namely the subset of all $x$ such that $Px$ holds.
+
+%% TODO: can I equate sets and types in the sense of models? unlikely. see todo above.
+
+This is fine, but impractical.
+This is usually extended byproof assistants by allowing the user to create definitions, variable substitutions on terms and variable substitution on types.
+In simple type theory, the last point is not even a semantically meaningful sentence, as we'll soon see.
+
+This establishes simple type theory as a model, alongside set theory, of logic. %%% TODO: better reference to models, halbeisen's book? ok, work it into text
+\cite{halbeisen_combinatorial_2025}
+This has an immense shortcoming. The language we have described so far doesn't allow us to talk \emph{about} types, only \emph{with} types.
+Take for example an algebraic structure like a group.
+While we may be able to talk about the elements of such a group, we do not have the tools necessary to generalize this to statements about \emph{all types which are groups}.
+Types and terms are kept strictly separate and we can't quantify over them.
+This distinction of therms and types is not present in set theory.
+Think for example, of the symbol $\Z$, which, in type theory, would be clearly categorized as a type, however this renders common notations such as "$n\Z$" syntactically meaningless.
+In set theory on the other hand, both $\Z$ and $n\Z$ are clearly sets (for lack of options) and the second expressions is simply a slight abuse of notation for a perfectly legal construction of a set.
+
+% section simply typed lambda calculus as a model of higher order logic (end)
+
+\section{dependent type theory}\label{sec:dependent_type_theory} % (fold)
+
+% section dependent type theory (end)
+
+\section{setoid hell}\label{sec:setoid_hell} % (fold)
+
+% section setoid hell (end)
+
+\section{implementations of extensionality}\label{sec:implementations_of_extensionality} % (fold)
+
+comparing lean and Rocq with respect to metatheoretical properties that the rocq people care about.
+
+% section implementations of extensionality (end)
+
+\section{SR failures}\label{sec:sr_failures} % (fold)
+
+% section SR failures (end)
 
 \section{Sylvester's Theorem}\label{sec:sylvester_s_theorem} % (fold)
 
@@ -144,9 +193,20 @@ proof?)
   Also \cite[Theorem 10.43]{Norman_1986}, which is what's cited on wikipedia.
 \end{redbox}
 
-
-
 % section Sylvester's Theorem (end)
+
+\section{Comparison to existing theorem}\label{sec:comparison_to_existing_theorem} % (fold)
+
+I accidentally implemented the existence theorem of an orthogonal basis. This
+invites for comparison. The underlying structure of the theorem is essentially
+the same. It requires an existence proof of one nonisotropic vector, and then
+proceeds by induction on the dimension.
+
+% section Comparison to existing theorem (end)
+
+\section{timetravelling bugs}\label{sec:timetravelling_bugs} % (fold)
+
+% section timetravelling bugs (end)
 
 \printbibliography
 
