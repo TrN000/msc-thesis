@@ -332,7 +332,7 @@ theorem squaring_both_sides
 end SquaringBothSides
 
 
-/-- attempting Sylvester's theorem (or a critical part of the proof), unsuccessfully.-/
+/-! attempting Sylvester's theorem (or a critical part of the proof), unsuccessfully.-/
 section Sylvester
 
 open Module
@@ -715,13 +715,14 @@ theorem special_set_card_le_finrank'
 
 end SpecialSet
 
+
 section Card
 
 open Module
 open scoped Classical
 
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-variable {E : Type*} [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable {K : Type*} [Field K] [LinearOrder K]
+variable {E : Type*} [AddCommGroup E] [Module K E]
 variable (b : BilinForm K E)
 variable {n : Type*} [Fintype n]
 variable (v : Basis n K E) (ortho : b.iIsOrtho v)
@@ -736,6 +737,9 @@ lemma split_card :
   classical
   rw [Fintype.card_congr (split_type b v)]
   exact Fintype.card_sum
+
+variable [IsStrictOrderedRing K]
+variable [FiniteDimensional K E]
 
 lemma nonpos_iff_neg_of_nondeg
     (nondeg : b.Nondegenerate) (ortho : b.iIsOrtho v) :
