@@ -55,6 +55,7 @@
 
 % section Introduction (end)
 
+<<<<<<< Updated upstream
 \section{simply typed lambda calculus as a model of higher order logic}\label{sec:simply_typed_lambda_calculus_as_a_model_of_higher_order_logic} % (fold)
 
 The formulation of simple type theory resembles models\footnote{in the strict sense of the definition of model theory for set theory} where models of first order logic formulas are built from sets, but using ((many?) sorted?) expressions from lambda calculus. 
@@ -85,13 +86,18 @@ In set theory on the other hand, both $\Z$ and $n\Z$ are clearly sets (for lack 
 
 % section simply typed lambda calculus as a model of higher order logic (end)
 
+
 \section{dependent type theory}\label{sec:dependent_type_theory} % (fold)
 
 % section dependent type theory (end)
 
-\section{setoid hell}\label{sec:setoid_hell} % (fold)
+
+\section{Setoid Hell}\label{sec:setoid_hell} % (fold)
+
+How proof assistants implement extensionality determines which type of complications the developing mathematicians face.
 
 % section setoid hell (end)
+
 
 \section{implementations of extensionality}\label{sec:implementations_of_extensionality} % (fold)
 
@@ -99,11 +105,25 @@ comparing lean and Rocq with respect to metatheoretical properties that the rocq
 
 % section implementations of extensionality (end)
 
+
 \section{SR failures}\label{sec:sr_failures} % (fold)
 
 % section SR failures (end)
 
+
 \section{Sylvester's Theorem}\label{sec:sylvester_s_theorem} % (fold)
+
+To explore the practical side of proof assistants I implemented Sylvester's theorem in Lean.
+
+There are multiple challenges to proof formalization and multiple approaches to managing them.
+
+One major risk of the mathlib project is the problem of duplication.
+A researcher might not find a theorem they need immediately and erroneously conclude that it has not been formalized yet; recreating it in the process.
+I also ran into this problem when I accidentally produced a proof of the existence of an orthogonal basis.
+Comparing the two versions side by side reveals that they follow the same essential proof structure, however the version of mathlib is more generic, and therefore strictly stronger.
+Mathlib's proof is also slightly more consise, which merits some attention.
+
+%% comparison of exists_orthogonal_basis
 
 Cite the theorem in the form that we prove, big picture overview of the proof,
 side by side comparison of "semantic" proof vs "formal" proof (vs formal
@@ -195,6 +215,7 @@ proof?)
 
 % section Sylvester's Theorem (end)
 
+
 \section{Comparison to existing theorem}\label{sec:comparison_to_existing_theorem} % (fold)
 
 I accidentally implemented the existence theorem of an orthogonal basis. This
@@ -204,9 +225,27 @@ proceeds by induction on the dimension.
 
 % section Comparison to existing theorem (end)
 
+
 \section{timetravelling bugs}\label{sec:timetravelling_bugs} % (fold)
 
 % section timetravelling bugs (end)
+
+
+\section{AI Usage}\label{sec:ai_usage} % (fold)
+
+This is an AI declaration stating to what extent generative AI was used in this thesis.
+
+AI was used in writing the software accompanying this thesis.
+not used to generate either parts or entire proofs. not for lack of trying. it's not very good at keeping coherent across longer passages of lean code.
+generated code was used as guideline for proofs. this entailed some work checking if the generated theorems actually existed, which was hit or miss.
+
+No AI was used in the writing of this thesis. The text herein has been written by hand by the author.
+
+AI was used as a research tool in place of Google searches.
+
+The used tools were OpenAI's ChatGPT, Perplexity AI's search tool and Lean community's own Moogle AI search tool.
+
+% section AI Usage (end)
 
 \printbibliography
 
