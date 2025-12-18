@@ -1,5 +1,15 @@
 \documentclass{amsbook}
+
+\usepackage[utf8x]{inputenc}  % Extended UTF-8 support
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{listingsutf8}
 \usepackage[backend=biber,style=authoryear]{biblatex}
+\usepackage{paracol}
+\usepackage{xcolor} % optional, for colors
+\usepackage{inconsolata}
+\addbibresource{./references.bib}
+
 \usepackage[most]{tcolorbox}
 
 \newtcolorbox{redbox}{%
@@ -8,6 +18,56 @@
   boxrule=0.8pt,
   fonttitle=\color{black}\bfseries,
   title="unfinished"
+}
+
+
+\lstset{
+  basicstyle=\ttfamily,
+  % numbers=left,
+  inputencoding=utf8x,
+  frame=lines,
+  keywordstyle={},
+  commentstyle={},
+  stringstyle={},
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  literate=
+    {∀}{{\ensuremath{\forall}}}1
+    {∃}{{\ensuremath{\exists}}}1
+    {λ}{{\ensuremath{\lambda}}}1
+    {→}{{\ensuremath{\to}}}1
+    {ℕ}{{\ensuremath{\mathbb{N}}}}1
+    {ℤ}{{\ensuremath{\mathbb{Z}}}}1
+    {∈}{{\ensuremath{\in}}}1
+    {∉}{{\ensuremath{\notin}}}1
+    {∪}{{\ensuremath{\cup}}}1
+    {∩}{{\ensuremath{\cap}}}1
+    {⊆}{{\ensuremath{\subseteq}}}1
+    {⊂}{{\ensuremath{\subset}}}1
+    {∅}{{\ensuremath{\emptyset}}}1
+    {≠}{{\ensuremath{\neq}}}1
+    {≤}{{\ensuremath{\le}}}1
+    {≥}{{\ensuremath{\ge}}}1
+    % {:=}{{\ensuremath{\coloneqq}}}1
+    {≔}{{\ensuremath{\coloneq}}}1
+    {Π}{{\ensuremath{\prod}}}1
+    {∑}{{\ensuremath{\sum}}}1
+    {⟨}{{\ensuremath{\langle}}}1
+    {⟩}{{\ensuremath{\rangle}}}1
+    {⊢}{{\ensuremath{\vdash}}}1
+    {⊨}{{\ensuremath{\vDash}}}1
+    {≃}{{\ensuremath{\simeq}}}1
+    {≈}{{\ensuremath{\approx}}}1
+    {β}{{\ensuremath{\beta}}}1
+    {α}{{\ensuremath{\alpha}}}1
+    {γ}{{\ensuremath{\gamma}}}1
+    {δ}{{\ensuremath{\delta}}}1
+    {⇔}{{\ensuremath{\Leftrightarrow}}}1
+    {↦}{{\ensuremath{\mapsto}}}1
+    {×}{{\ensuremath{\times}}}1
+    {₁}{{\ensuremath{_{1}}}}1
+    {₂}{{\ensuremath{_{2}}}}1
 }
 
 
@@ -31,7 +91,14 @@
 \newcommand{\R}{\mathopen{}\ensuremath{\mathbb{R}}\mathclose{}}
 \newcommand{\ra}{\mathopen{}\ensuremath{\rightarrow}\mathclose{}}
 
-\addbibresource{./references.bib}
+\newcommand{\joke}[1]{#1}
+
+% \usepackage{amsmath}
+
+\DeclareMathOperator{\id}{Id}
+\DeclareMathOperator{\Prop}{Prop}
+\DeclareMathOperator{\Quot}{Quot}
+\DeclareMathOperator{\Setoid}{Setoid}
 
 \title{Proof Assistants and Proof Formalization}
 \author{Nicolas Trutmann}
@@ -45,18 +112,73 @@
 
 \section{Introduction}\label{sec:introduction} % (fold)
 
+Type theory is a branch of formal logic.
+It aims to formalize terms and introduces the idea that each such term has an associated type.
+The aim is to bring the diligence of computers to mathematicians to take the burden of verification off them.
+This is done by creating a programming language which implements a formal language for which we have a correspondence to mathematical logic such that the objects of the language can be viewed as proofs and theorems. Syntactical correctness, which is relatively easy to verify, then corresponds to mathematical correctness.
+This idea has been implemented many times, resulting in a number of pieces of software named proof assistants, with subtle differences that create interesting emergent behavior.
+We will mainly focus on dependent type theory as a foundation for the Lean (specifically Lean4) Language.
+
+Lean has gained a substantial presence in the proof assistant space.
+This has many reasons, it allows working mathematicians to quickly state their theorems without sacrifices to syntax and notation, it has a rich ecosystem provided by Lean's mathlib, which acts as a centralized knowledge hub with a large quantity of theorems, and an easy setup system to lower the barrier of entry for nonprogrammer mathematicians.
+
+Another popular choice is Rocq (n\'ee Coq) which shares many similarities with Lean, which invites comparison.
+It differs at least a little in nearly all aspects, ranging from implementation to its theoretic foundations.
+We will take a closer look at one of those differences and try to shine a light on what practical implications follow from it.
+
+% what to write? wishy washy bit about proof assistants? mention practical section of the thesis. "we've implemented sylvester's theorem, as a joke"
+% should there be a bridge between fluff and theoretical bit? like "the lineage
+% of dependent types goes \lambda calc/set theoretic foundations -> typed lambda calc -> dependent types"
+%
+
 \begin{redbox}
   what is a proof assistant, why do proofs "hold" in a proof assistant, are there
   options, which option have we chosen and why, what are we doing with it,
   (eventually) what have we gotten out of this endeavor
-
   \cite{avigad_foundations_2021}
 \end{redbox}
 
 % section Introduction (end)
 
-<<<<<<< Updated upstream
 \section{simply typed lambda calculus as a model of higher order logic}\label{sec:simply_typed_lambda_calculus_as_a_model_of_higher_order_logic} % (fold)
+
+Alonzo Church developed lambda calculus in the 1930s to abstractly reason about computability.
+Lambda calculus was designed so that it would be syntactically small, which makes it easy to write down in its entirety in just a few lines.
+The language primitives are composed of variables, functions and function application.
+
+\begin{align*}
+  % TODO: fix typesetting
+  \text{expression} & := \text{variable} | \text{function} | \text{application} \\
+  \text{function}   & := \lambda \text{variable} . \text{expression} \\
+  \text{application} & := \text{expression} \text{expression} \\
+\end{align*}
+
+Since function application is written by juxtaposition, the only syntactically necessary symbols are "$\lambda$" and "." to construct functions.
+Parentheses are also used to group expressions, meaning $(E)$ is equal to $E$.
+
+As an example, consider the identity function.
+
+\[
+  \id \equiv \lambda x.x
+\]
+
+For any application $\id y$, we substitute every occurence of the bound variable to the right of the dot.
+So $\id y \equiv (\lambda x.x) y = y$.
+
+The last step of applying $y$ and rewriting the expression inside the function is called \textbf{$\beta$-redex}.
+It is also written by juxtaposing a square bracket noting the substitution to be carries out.
+An application $(\lambda x.y) z$, would then be written as $y[z/x]$ and is called a \textbf{$\beta$-contract}.
+This is not part of the syntax of lambda calculus but helps with legibility.
+We say a term $s$ \textbf{$\beta$-reduces to} $t$ if we can obtain t from $\beta$ redexes of $s$.
+We can illustrate this by verifying that $\id \id$ $\beta$-reduces to $\id$.
+
+\begin{align*}
+         &\  \id \id \\
+  \equiv &\  (\lambda x.x) (\lambda y.y) \\
+  =      &\  x[\lambda y.y / x] \\
+  =      &\  \lambda y.y \\
+  \equiv &\  \id
+\end{align*}
 
 The formulation of simple type theory resembles models\footnote{in the strict sense of the definition of model theory for set theory} where models of first order logic formulas are built from sets, but using ((many?) sorted?) expressions from lambda calculus. 
 
@@ -74,8 +196,33 @@ This is fine, but impractical.
 This is usually extended byproof assistants by allowing the user to create definitions, variable substitutions on terms and variable substitution on types.
 In simple type theory, the last point is not even a semantically meaningful sentence, as we'll soon see.
 
-This establishes simple type theory as a model, alongside set theory, of logic. %%% TODO: better reference to models, halbeisen's book? ok, work it into text
+% TODO: add types
+
+Now we add types to this.
+We begin by notation, saying that a term $t$ is of type $T$, by writing $t:T$.
+We will have to decide what a type $T$ is, and a place for them to live, so that we can make sense of an expression like $T \in \mathcal{T}$.
+On top of that we have to define what kind of hierarchy these types have amongst one another.
+This line of thought is prompted by asking "what is the type of a type?".
+
+Setting answers aside for a moment, we first have to bring $\lambda$-calculus together with types in the first place, so we will momentarily pretend to know what a type is.
+
+Going through the syntax definition of $\lambda$-calculus, we first have to give expressions a type.
+We denote them by capital letters, and live with the opaque nature of them for now. % this sentence sucks
+
+Let $x:A$ be a variable of type $A$, and $y:B$ a term of type $B$, we denote the type of a function $\lambda x.y$ by $A \ra B$.
+
+Finally, function application should then be $(\lambda x.y)z$ of type $(A \ra B) A$, which should reduce to $B$.
+
+% This establishes simple type theory as a model, alongside set theory, of logic. %%% TODO: better reference to models, halbeisen's book? ok, work it into text
 \cite{halbeisen_combinatorial_2025}
+
+% TODO: sort of translation guide between set theorists and type theorists
+
+% section simply typed lambda calculus as a model of higher order logic (end)
+
+
+\section{dependent type theory}\label{sec:dependent_type_theory} % (fold)
+
 This has an immense shortcoming. The language we have described so far doesn't allow us to talk \emph{about} types, only \emph{with} types.
 Take for example an algebraic structure like a group.
 While we may be able to talk about the elements of such a group, we do not have the tools necessary to generalize this to statements about \emph{all types which are groups}.
@@ -84,22 +231,149 @@ This distinction of therms and types is not present in set theory.
 Think for example, of the symbol $\Z$, which, in type theory, would be clearly categorized as a type, however this renders common notations such as "$n\Z$" syntactically meaningless.
 In set theory on the other hand, both $\Z$ and $n\Z$ are clearly sets (for lack of options) and the second expressions is simply a slight abuse of notation for a perfectly legal construction of a set.
 
-% section simply typed lambda calculus as a model of higher order logic (end)
+% TODO: mention difference of types as props and types as _some_ props
 
-
-\section{dependent type theory}\label{sec:dependent_type_theory} % (fold)
+% TODO: do equality types go here?
 
 % section dependent type theory (end)
 
 
 \section{Setoid Hell}\label{sec:setoid_hell} % (fold)
 
-How proof assistants implement extensionality determines which type of complications the developing mathematicians face.
+Lean offers a function $\Quot$, which, for a predicate $r: \alpha \ra \alpha \ra \Prop$, that constructs a new type from equivalence classes of $\alpha$ based on $r$.
+
+
+By contrast, in Coq, one defines a {\it setoid}, which is composed of the carrier type, the equivalence relation, and a proof that the relation is well defined.
+
+While in Lean the equivalence relation is, to a large extent, hidden and thereby out of the way of the user, In Coq the user is regularly forced to appeal to well-definedness for proofs involving the setoid.
+
+We demonstrate this by example, as the actual effect of this problem is not accurately captured by a description alone.
+We will use pairs of naturals to model the integers with the relation
+
+\[
+  (a, a') \sim (b, b') :\Leftrightarrow a + b' = b + a'
+\]
+
+and define addition on the quotient.
+Full working source code for the example can be found in appendix~\ref{chap:setoid_hell_code} as well as the associated GitHub repository.
+In lean the construction uses the language primitive \lstinline|Quot| over \lstinline|Setoid|.
+
+\begin{lstlisting}[captionpos=b, caption="Turning an equivalence relation into a quotient type using \lstinline|Quot| and \lstinline|Setoid|."]
+def int_rel (p q : ℕ × ℕ) : Prop :=
+  p.1 + q.2 = q.1 + p.2
+
+instance int_setoid : Setoid (ℕ × ℕ) where
+  r := int_rel
+  iseqv := sorry
+
+def ℤ' : Type := Quot int_setoid
+\end{lstlisting}
+
+Then we lift the addition of naturals to the quotient type using Lean's \lstinline|Quot.lift| function.
+
+\begin{lstlisting}[captionpos=b, caption="Lifting addition of the carrier type to the quotient type using \lstinline|Quot.lift|"]
+def add_rep (p q : ℕ × ℕ) : ℕ × ℕ :=
+  (p.1 + q.1, p.2 + q.2)
+
+-- proofs omitted
+lemma add_rep_well_defined
+  {p p' q q' : ℕ × ℕ}
+  (hp : int_rel p p') (hq : int_rel q q') :
+  int_rel (add_rep p q) (add_rep p' q') := by sorry
+
+def zadd : ℤ' → ℤ' → ℤ' :=
+  Quot.lift₂
+    (fun p q => Quot.mk int_rel (add_rep p q))
+    (sorry)
+    (sorry)
+
+instance : Add ℤ' := ⟨zadd⟩
+\end{lstlisting}
+
+The type $\Z'$ is a genuine new type of integers and \lstinline|zadd| is a genuine function $\Z' \ra \Z' \ra \Z'$.
+The "price" for this type was paid exactly once when we showed well-definedness.
+
+In Rocq, the idea is the same, but we stay within setoids.
+We treat the type \lstinline|nat * nat| as a setoid and must show properness for all operations with respect to the equivalence.
+
+\begin{lstlisting}[captionpos=b, caption="Definition of the setoid in Rocq"]
+Definition int_rel (p q : nat * nat) : Prop :=
+  fst p + snd q = fst q + snd p.
+
+Instance int_rel_equiv : Equivalence int_rel :=
+  { Equivalence_Reflexive  := int_rel_refl
+  ; Equivalence_Symmetric  := int_rel_sym
+  ; Equivalence_Transitive := int_rel_trans }.
+
+Add Relation (nat * nat) int_rel
+  reflexivity proved by int_rel_refl
+  symmetry proved by int_rel_sym
+  transitivity proved by int_rel_trans
+  as int_rel_setoid.
+\end{lstlisting}
+
+Now \lstinline|nat * nat| is "the integers", but there is no new quotient type, only an equivalence relation.
+To define addition as an operation we define addition on representatives and show that this extends to a proper morphism on the equivalence relation.
+
+\begin{lstlisting}[captionpos=b, caption="Creating a proper morphism of addition in Rocq."]
+Definition add_pair (p q : nat * nat) : nat * nat :=
+  (fst p + fst q, snd p + snd q).
+
+Global Instance add_pair_Proper :
+  Proper (int_rel ==> int_rel ==> int_rel) add_pair.
+Proof. Admitted.
+\end{lstlisting}
+
+The "integers" are still \lstinline|nat * nat|.
+To use them as integers, we must constantly tell Coq that our operations are proper with respect to \lstinline|int_rel|.
+Any new function you define (opp, mul, projections, etc.) needs its own proper proof.
+When rewriting in proofs, we must use \lstinline|setoid_rewrite| (or similar) rather than plain rewrite.
+There is never get an actual quotient type $\Z$ with a projection from \lstinline|nat * nat|.
+The equivalence relation follows this construction along forever.
+That constant overhead (extra instances, propers, setoid rewrite) is what people mean by setoid hell.
+
+Here is a proof involving setoid rewrites. We show that the addition we have defined is commutative:
+
+\begin{lstlisting}[captionpos=b, caption="Proff that \lstinline|add_pair_Proper| is commutative."]
+Lemma add_pair_comm : forall p q, int_rel (add_pair p q) (add_pair q p).
+Proof.
+  intros p q.
+  unfold add_pair, int_rel; cbn; lia.
+Qed.
+
+Lemma add_pair_comm_respects :
+  forall p p' q q',
+    int_rel p p' ->
+    int_rel q q' ->
+    int_rel (add_pair p q) (add_pair q' p').
+Proof.
+  intros p p' q q' Hp Hq.
+  setoid_rewrite Hp.
+  setoid_rewrite Hq.
+  apply add_pair_comm.
+Qed.
+\end{lstlisting}
+
+% How proof assistants implement extensionality determines which type of complications the developing mathematicians face.
+
+\begin{paracol}{2}
+\begin{lstlisting}
+code left
+\end{lstlisting}
+
+\switchcolumn
+
+\begin{lstlisting}
+code right
+\end{lstlisting}
+\end{paracol}
+
+
 
 % section setoid hell (end)
 
 
-\section{implementations of extensionality}\label{sec:implementations_of_extensionality} % (fold)
+\section{implementations of extensionality(working title)}\label{sec:implementations_of_extensionality} % (fold)
 
 comparing lean and Rocq with respect to metatheoretical properties that the rocq people care about.
 
@@ -107,6 +381,8 @@ comparing lean and Rocq with respect to metatheoretical properties that the rocq
 
 
 \section{SR failures}\label{sec:sr_failures} % (fold)
+
+% TODO: get some sr failures together
 
 % section SR failures (end)
 
@@ -129,13 +405,6 @@ Cite the theorem in the form that we prove, big picture overview of the proof,
 side by side comparison of "semantic" proof vs "formal" proof (vs formal
 proof?)
 
-\begin{redbox}
-  \subsection{Prelude}\label{sec:prelude} % (fold)
-  definitions and such
-
-  bilinear form, notation
-  % subsection Prelude (end)
-\end{redbox}
 
 
 \begin{redbox}
@@ -148,7 +417,7 @@ proof?)
   The title reads:
   \begin{quotation}
     A DEMONSTRATION OF THE THEOREM THAT EVERY HOMOGENEOUS QUADRATIC POLYNOMIAL
-    IS REDUCIBLE BY REAL ORTHOGONAL SUBSTITUTIONS TO THE FORM OF A SUM  OF
+    IS REDUCIBLE BY REAL ORTHOGONAL SUBSTITUTIONS TO THE FORM OF A SUM OF
     POSITIVE AND NEGATIVE SQUARES. [sic.]
   \end{quotation}
 
@@ -249,5 +518,16 @@ The used tools were OpenAI's ChatGPT, Perplexity AI's search tool and Lean commu
 
 \printbibliography
 
+\appendix
 
+\chapter{Setoid Hell Code}\label{chap:setoid_hell_code} % (fold)
+
+\section{SetoidHell.lean}
+\lstinputlisting[]{../src/Src/SetoidHell.lean}
+
+\section{SetoidHell.v}
+
+\lstinputlisting[]{../src/SetoidHell.v}
+
+% chapter Setoid Hell Code (end)
 \end{document}
