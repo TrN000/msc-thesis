@@ -1,5 +1,5 @@
 \documentclass{amsbook}
-
+\usepackage{minted}
 \usepackage[utf8x]{inputenc}  % Extended UTF-8 support
 \usepackage[T1]{fontenc}
 \usepackage{listings}
@@ -20,55 +20,63 @@
   title="unfinished"
 }
 
+\usepackage{fontspec}
+% \setmonofont{DejaVu Sans Mono}
 
-\lstset{
-  basicstyle=\ttfamily,
-  % numbers=left,
-  inputencoding=utf8x,
-  frame=lines,
-  keywordstyle={},
-  commentstyle={},
-  stringstyle={},
-  showstringspaces=false,
-  breaklines=true,
-  breakatwhitespace=true,
-  literate=
-    {∀}{{\ensuremath{\forall}}}1
-    {∃}{{\ensuremath{\exists}}}1
-    {λ}{{\ensuremath{\lambda}}}1
-    {→}{{\ensuremath{\to}}}1
-    {ℕ}{{\ensuremath{\mathbb{N}}}}1
-    {ℤ}{{\ensuremath{\mathbb{Z}}}}1
-    {∈}{{\ensuremath{\in}}}1
-    {∉}{{\ensuremath{\notin}}}1
-    {∪}{{\ensuremath{\cup}}}1
-    {∩}{{\ensuremath{\cap}}}1
-    {⊆}{{\ensuremath{\subseteq}}}1
-    {⊂}{{\ensuremath{\subset}}}1
-    {∅}{{\ensuremath{\emptyset}}}1
-    {≠}{{\ensuremath{\neq}}}1
-    {≤}{{\ensuremath{\le}}}1
-    {≥}{{\ensuremath{\ge}}}1
-    % {:=}{{\ensuremath{\coloneqq}}}1
-    {≔}{{\ensuremath{\coloneq}}}1
-    {Π}{{\ensuremath{\prod}}}1
-    {∑}{{\ensuremath{\sum}}}1
-    {⟨}{{\ensuremath{\langle}}}1
-    {⟩}{{\ensuremath{\rangle}}}1
-    {⊢}{{\ensuremath{\vdash}}}1
-    {⊨}{{\ensuremath{\vDash}}}1
-    {≃}{{\ensuremath{\simeq}}}1
-    {≈}{{\ensuremath{\approx}}}1
-    {β}{{\ensuremath{\beta}}}1
-    {α}{{\ensuremath{\alpha}}}1
-    {γ}{{\ensuremath{\gamma}}}1
-    {δ}{{\ensuremath{\delta}}}1
-    {⇔}{{\ensuremath{\Leftrightarrow}}}1
-    {↦}{{\ensuremath{\mapsto}}}1
-    {×}{{\ensuremath{\times}}}1
-    {₁}{{\ensuremath{_{1}}}}1
-    {₂}{{\ensuremath{_{2}}}}1
+\setminted{
+  fontfamily=tt,
+  fontsize=\small,
+  breaklines,
 }
+
+% \lstset{
+%   basicstyle=\ttfamily,
+%   % numbers=left,
+%   inputencoding=utf8x,
+%   frame=lines,
+%   keywordstyle={},
+%   commentstyle={},
+%   stringstyle={},
+%   showstringspaces=false,
+%   breaklines=true,
+%   breakatwhitespace=true,
+%   literate=
+%     {∀}{{\ensuremath{\forall}}}1
+%     {∃}{{\ensuremath{\exists}}}1
+%     {λ}{{\ensuremath{\lambda}}}1
+%     {→}{{\ensuremath{\to}}}1
+%     {ℕ}{{\ensuremath{\mathbb{N}}}}1
+%     {ℤ}{{\ensuremath{\mathbb{Z}}}}1
+%     {∈}{{\ensuremath{\in}}}1
+%     {∉}{{\ensuremath{\notin}}}1
+%     {∪}{{\ensuremath{\cup}}}1
+%     {∩}{{\ensuremath{\cap}}}1
+%     {⊆}{{\ensuremath{\subseteq}}}1
+%     {⊂}{{\ensuremath{\subset}}}1
+%     {∅}{{\ensuremath{\emptyset}}}1
+%     {≠}{{\ensuremath{\neq}}}1
+%     {≤}{{\ensuremath{\le}}}1
+%     {≥}{{\ensuremath{\ge}}}1
+%     % {:=}{{\ensuremath{\coloneqq}}}1
+%     {≔}{{\ensuremath{\coloneq}}}1
+%     {Π}{{\ensuremath{\prod}}}1
+%     {∑}{{\ensuremath{\sum}}}1
+%     {⟨}{{\ensuremath{\langle}}}1
+%     {⟩}{{\ensuremath{\rangle}}}1
+%     {⊢}{{\ensuremath{\vdash}}}1
+%     {⊨}{{\ensuremath{\vDash}}}1
+%     {≃}{{\ensuremath{\simeq}}}1
+%     {≈}{{\ensuremath{\approx}}}1
+%     {β}{{\ensuremath{\beta}}}1
+%     {α}{{\ensuremath{\alpha}}}1
+%     {γ}{{\ensuremath{\gamma}}}1
+%     {δ}{{\ensuremath{\delta}}}1
+%     {⇔}{{\ensuremath{\Leftrightarrow}}}1
+%     {↦}{{\ensuremath{\mapsto}}}1
+%     {×}{{\ensuremath{\times}}}1
+%     {₁}{{\ensuremath{_{1}}}}1
+%     {₂}{{\ensuremath{_{2}}}}1
+% }
 
 
 % Define theorem environments
@@ -109,6 +117,8 @@
 \maketitle
 
 \tableofcontents
+
+\chapter{Introduction to Dependent Type Theory for Proof Assistants}\label{chap:introduction_to_dependent_type_theory_for_proof_assistants} % (fold)
 
 \section{Introduction}\label{sec:introduction} % (fold)
 
@@ -237,8 +247,20 @@ In set theory on the other hand, both $\Z$ and $n\Z$ are clearly sets (for lack 
 
 % section dependent type theory (end)
 
+% chapter Introduction to Dependent Type Theory for Proof Assistants (end)
+
+
+
+
+
+
+\chapter{Investigating Setoid Hell}\label{chap:investigating_setoid_hell} % (fold)
 
 \section{Setoid Hell}\label{sec:setoid_hell} % (fold)
+
+Setoid hell is often cited as an argument in favor of Lean over Rocq, arguing that the working mathematician will be better enabled to do pragmatic work in Lean, whereas in Rocq they would have to deal with setoids, that is a structure consisting of the underlying type and an equivalence relation, instead of a quotient type, that makes the underlying construction "irrelevant" (irrelevant in the sense that it is not in the way).
+
+The narrative throughline we pick to investigate this problem is to begin with an example of setoids and quotients in both Lean and Rocq, and work our way backwards through definitions to root-cause the distinguishing attributes of both systems that give rise to this phenomenon.
 
 Lean offers a function $\Quot$, which, for a predicate $r: \alpha \ra \alpha \ra \Prop$, that constructs a new type from equivalence classes of $\alpha$ based on $r$.
 
@@ -258,20 +280,21 @@ and define addition on the quotient.
 Full working source code for the example can be found in appendix~\ref{chap:setoid_hell_code} as well as the associated GitHub repository.
 In lean the construction uses the language primitive \lstinline|Quot| over \lstinline|Setoid|.
 
-\begin{lstlisting}[captionpos=b, caption="Turning an equivalence relation into a quotient type using \lstinline|Quot| and \lstinline|Setoid|."]
+\begin{minted}{lean4}[captionpos=b, caption="Turning an equivalence relation into a quotient type using \lstinline|Quot| and \lstinline|Setoid|."]
 def int_rel (p q : ℕ × ℕ) : Prop :=
   p.1 + q.2 = q.1 + p.2
+
 
 instance int_setoid : Setoid (ℕ × ℕ) where
   r := int_rel
   iseqv := sorry
 
 def ℤ' : Type := Quot int_setoid
-\end{lstlisting}
+\end{minted}
 
 Then we lift the addition of naturals to the quotient type using Lean's \lstinline|Quot.lift| function.
 
-\begin{lstlisting}[captionpos=b, caption="Lifting addition of the carrier type to the quotient type using \lstinline|Quot.lift|"]
+\begin{minted}{lean4}[captionpos=b, caption="Lifting addition of the carrier type to the quotient type using \lstinline|Quot.lift|"]
 def add_rep (p q : ℕ × ℕ) : ℕ × ℕ :=
   (p.1 + q.1, p.2 + q.2)
 
@@ -288,7 +311,7 @@ def zadd : ℤ' → ℤ' → ℤ' :=
     (sorry)
 
 instance : Add ℤ' := ⟨zadd⟩
-\end{lstlisting}
+\end{minted}
 
 The type $\Z'$ is a genuine new type of integers and \lstinline|zadd| is a genuine function $\Z' \ra \Z' \ra \Z'$.
 The "price" for this type was paid exactly once when we showed well-definedness.
@@ -296,7 +319,7 @@ The "price" for this type was paid exactly once when we showed well-definedness.
 In Rocq, the idea is the same, but we stay within setoids.
 We treat the type \lstinline|nat * nat| as a setoid and must show properness for all operations with respect to the equivalence.
 
-\begin{lstlisting}[captionpos=b, caption="Definition of the setoid in Rocq"]
+\begin{minted}{coq}[captionpos=b, caption="Definition of the setoid in Rocq"]
 Definition int_rel (p q : nat * nat) : Prop :=
   fst p + snd q = fst q + snd p.
 
@@ -310,19 +333,19 @@ Add Relation (nat * nat) int_rel
   symmetry proved by int_rel_sym
   transitivity proved by int_rel_trans
   as int_rel_setoid.
-\end{lstlisting}
+\end{minted}
 
 Now \lstinline|nat * nat| is "the integers", but there is no new quotient type, only an equivalence relation.
 To define addition as an operation we define addition on representatives and show that this extends to a proper morphism on the equivalence relation.
 
-\begin{lstlisting}[captionpos=b, caption="Creating a proper morphism of addition in Rocq."]
+\begin{minted}[captionpos=b, caption="Creating a proper morphism of addition in Rocq."]
 Definition add_pair (p q : nat * nat) : nat * nat :=
   (fst p + fst q, snd p + snd q).
 
 Global Instance add_pair_Proper :
   Proper (int_rel ==> int_rel ==> int_rel) add_pair.
 Proof. Admitted.
-\end{lstlisting}
+\end{minted}
 
 The "integers" are still \lstinline|nat * nat|.
 To use them as integers, we must constantly tell Coq that our operations are proper with respect to \lstinline|int_rel|.
@@ -334,7 +357,7 @@ That constant overhead (extra instances, propers, setoid rewrite) is what people
 
 Here is a proof involving setoid rewrites. We show that the addition we have defined is commutative:
 
-\begin{lstlisting}[captionpos=b, caption="Proff that \lstinline|add_pair_Proper| is commutative."]
+\begin{minted}[captionpos=b, caption="Proff that \lstinline|add_pair_Proper| is commutative."]
 Lemma add_pair_comm : forall p q, int_rel (add_pair p q) (add_pair q p).
 Proof.
   intros p q.
@@ -352,21 +375,21 @@ Proof.
   setoid_rewrite Hq.
   apply add_pair_comm.
 Qed.
-\end{lstlisting}
+\end{minted}
 
 % How proof assistants implement extensionality determines which type of complications the developing mathematicians face.
 
-\begin{paracol}{2}
-\begin{lstlisting}
-code left
-\end{lstlisting}
-
-\switchcolumn
-
-\begin{lstlisting}
-code right
-\end{lstlisting}
-\end{paracol}
+% \begin{paracol}{2}
+% \begin{minted}
+% code left
+% \end{minted}
+%
+% \switchcolumn
+%
+% \begin{minted}
+% code right
+% \end{minted}
+% \end{paracol}
 
 
 
@@ -377,14 +400,27 @@ code right
 
 comparing lean and Rocq with respect to metatheoretical properties that the rocq people care about.
 
+% Go by the following citations
+
+\cite[lean4/src/kernel/quot.h at master (at time of writing)]{lean4_source}
+What Lean implements is Quot, quot lift, quot ind, and quot mk.
+
+% what are these, take a look at the adjacent quot.cpp file
+
 % section implementations of extensionality (end)
 
 
 \section{SR failures}\label{sec:sr_failures} % (fold)
 
+Lean, by its own admission fails at subject reduction. We show how it fails maybe by \cite[Carneiro's Thesis]{carneiro_2019}
+
 % TODO: get some sr failures together
 
 % section SR failures (end)
+
+% chapter Investigating Setoid Hell (end)
+
+\chapter{Exploring Lean through Implementation of a nontrivial Theorem}\label{chap:exploring_lean_through_implementation_of_a_nontrivial_theorem} % (fold)
 
 
 \section{Sylvester's Theorem}\label{sec:sylvester_s_theorem} % (fold)
@@ -499,6 +535,7 @@ proceeds by induction on the dimension.
 
 % section timetravelling bugs (end)
 
+% chapter Exploring Lean through Implementation of a nontrivial Theorem (end)
 
 \section{AI Usage}\label{sec:ai_usage} % (fold)
 
