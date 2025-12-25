@@ -1,12 +1,9 @@
 \documentclass{amsbook}
 \usepackage{minted}
-\usepackage[utf8x]{inputenc}  % Extended UTF-8 support
-\usepackage[T1]{fontenc}
-\usepackage{listings}
-\usepackage{listingsutf8}
+\usepackage{float}  % For [H] placement
 \usepackage[backend=biber,style=authoryear]{biblatex}
 \usepackage{paracol}
-\usepackage{xcolor} % optional, for colors
+\usepackage{xcolor}
 \usepackage{inconsolata}
 \addbibresource{./references.bib}
 
@@ -21,7 +18,7 @@
 }
 
 \usepackage{fontspec}
-% \setmonofont{DejaVu Sans Mono}
+\setmonofont{DejaVu Sans Mono}
 
 \setminted{
   fontfamily=tt,
@@ -29,55 +26,8 @@
   breaklines,
 }
 
-% \lstset{
-%   basicstyle=\ttfamily,
-%   % numbers=left,
-%   inputencoding=utf8x,
-%   frame=lines,
-%   keywordstyle={},
-%   commentstyle={},
-%   stringstyle={},
-%   showstringspaces=false,
-%   breaklines=true,
-%   breakatwhitespace=true,
-%   literate=
-%     {∀}{{\ensuremath{\forall}}}1
-%     {∃}{{\ensuremath{\exists}}}1
-%     {λ}{{\ensuremath{\lambda}}}1
-%     {→}{{\ensuremath{\to}}}1
-%     {ℕ}{{\ensuremath{\mathbb{N}}}}1
-%     {ℤ}{{\ensuremath{\mathbb{Z}}}}1
-%     {∈}{{\ensuremath{\in}}}1
-%     {∉}{{\ensuremath{\notin}}}1
-%     {∪}{{\ensuremath{\cup}}}1
-%     {∩}{{\ensuremath{\cap}}}1
-%     {⊆}{{\ensuremath{\subseteq}}}1
-%     {⊂}{{\ensuremath{\subset}}}1
-%     {∅}{{\ensuremath{\emptyset}}}1
-%     {≠}{{\ensuremath{\neq}}}1
-%     {≤}{{\ensuremath{\le}}}1
-%     {≥}{{\ensuremath{\ge}}}1
-%     % {:=}{{\ensuremath{\coloneqq}}}1
-%     {≔}{{\ensuremath{\coloneq}}}1
-%     {Π}{{\ensuremath{\prod}}}1
-%     {∑}{{\ensuremath{\sum}}}1
-%     {⟨}{{\ensuremath{\langle}}}1
-%     {⟩}{{\ensuremath{\rangle}}}1
-%     {⊢}{{\ensuremath{\vdash}}}1
-%     {⊨}{{\ensuremath{\vDash}}}1
-%     {≃}{{\ensuremath{\simeq}}}1
-%     {≈}{{\ensuremath{\approx}}}1
-%     {β}{{\ensuremath{\beta}}}1
-%     {α}{{\ensuremath{\alpha}}}1
-%     {γ}{{\ensuremath{\gamma}}}1
-%     {δ}{{\ensuremath{\delta}}}1
-%     {⇔}{{\ensuremath{\Leftrightarrow}}}1
-%     {↦}{{\ensuremath{\mapsto}}}1
-%     {×}{{\ensuremath{\times}}}1
-%     {₁}{{\ensuremath{_{1}}}}1
-%     {₂}{{\ensuremath{_{2}}}}1
-% }
-
+% \usemintedstyle[lean4]{}
+\usemintedstyle[coq]{autumn}
 
 % Define theorem environments
 \newtheorem{theorem}{Theorem}[section]   % numbered within sections
@@ -100,8 +50,6 @@
 \newcommand{\ra}{\mathopen{}\ensuremath{\rightarrow}\mathclose{}}
 
 \newcommand{\joke}[1]{#1}
-
-% \usepackage{amsmath}
 
 \DeclareMathOperator{\id}{Id}
 \DeclareMathOperator{\Prop}{Prop}
@@ -280,10 +228,10 @@ and define addition on the quotient.
 Full working source code for the example can be found in appendix~\ref{chap:setoid_hell_code} as well as the associated GitHub repository.
 In lean the construction uses the language primitive \lstinline|Quot| over \lstinline|Setoid|.
 
-\begin{minted}{lean4}[captionpos=b, caption="Turning an equivalence relation into a quotient type using \lstinline|Quot| and \lstinline|Setoid|."]
+\begin{listing}[H]
+\begin{minted}{lean4}
 def int_rel (p q : ℕ × ℕ) : Prop :=
   p.1 + q.2 = q.1 + p.2
-
 
 instance int_setoid : Setoid (ℕ × ℕ) where
   r := int_rel
@@ -291,10 +239,14 @@ instance int_setoid : Setoid (ℕ × ℕ) where
 
 def ℤ' : Type := Quot int_setoid
 \end{minted}
+\caption{Turning an equivalence relation into a quotient type using \lstinline|Quot| and \lstinline|Setoid|.}
+\label{lst:lean-equiv-setoid}
+\end{listing}
 
 Then we lift the addition of naturals to the quotient type using Lean's \lstinline|Quot.lift| function.
 
-\begin{minted}{lean4}[captionpos=b, caption="Lifting addition of the carrier type to the quotient type using \lstinline|Quot.lift|"]
+\begin{listing}[H]
+\begin{minted}{lean4}
 def add_rep (p q : ℕ × ℕ) : ℕ × ℕ :=
   (p.1 + q.1, p.2 + q.2)
 
@@ -312,6 +264,9 @@ def zadd : ℤ' → ℤ' → ℤ' :=
 
 instance : Add ℤ' := ⟨zadd⟩
 \end{minted}
+\caption{Lifting addition of the carrier type to the quotient type using \lstinline|Quot.lift|.}
+\label{lst:lean-lift-using-quot}
+\end{listing}
 
 The type $\Z'$ is a genuine new type of integers and \lstinline|zadd| is a genuine function $\Z' \ra \Z' \ra \Z'$.
 The "price" for this type was paid exactly once when we showed well-definedness.
@@ -319,7 +274,8 @@ The "price" for this type was paid exactly once when we showed well-definedness.
 In Rocq, the idea is the same, but we stay within setoids.
 We treat the type \lstinline|nat * nat| as a setoid and must show properness for all operations with respect to the equivalence.
 
-\begin{minted}{coq}[captionpos=b, caption="Definition of the setoid in Rocq"]
+\begin{listing}[H]
+\begin{minted}{coq}
 Definition int_rel (p q : nat * nat) : Prop :=
   fst p + snd q = fst q + snd p.
 
@@ -334,11 +290,15 @@ Add Relation (nat * nat) int_rel
   transitivity proved by int_rel_trans
   as int_rel_setoid.
 \end{minted}
+\caption{Definition of the setoid in Rocq.}
+\label{lst:coq-define-setoid}
+\end{listing}
 
 Now \lstinline|nat * nat| is "the integers", but there is no new quotient type, only an equivalence relation.
 To define addition as an operation we define addition on representatives and show that this extends to a proper morphism on the equivalence relation.
 
-\begin{minted}[captionpos=b, caption="Creating a proper morphism of addition in Rocq."]
+\begin{listing}[H]
+\begin{minted}{coq}
 Definition add_pair (p q : nat * nat) : nat * nat :=
   (fst p + fst q, snd p + snd q).
 
@@ -346,6 +306,9 @@ Global Instance add_pair_Proper :
   Proper (int_rel ==> int_rel ==> int_rel) add_pair.
 Proof. Admitted.
 \end{minted}
+\caption{Creating a proper morphism of addition in Rocq.}
+\label{lst:coq-proper-morph}
+\end{listing}
 
 The "integers" are still \lstinline|nat * nat|.
 To use them as integers, we must constantly tell Coq that our operations are proper with respect to \lstinline|int_rel|.
@@ -357,7 +320,8 @@ That constant overhead (extra instances, propers, setoid rewrite) is what people
 
 Here is a proof involving setoid rewrites. We show that the addition we have defined is commutative:
 
-\begin{minted}[captionpos=b, caption="Proff that \lstinline|add_pair_Proper| is commutative."]
+\begin{listing}[H]
+\begin{minted}{coq}
 Lemma add_pair_comm : forall p q, int_rel (add_pair p q) (add_pair q p).
 Proof.
   intros p q.
@@ -376,6 +340,9 @@ Proof.
   apply add_pair_comm.
 Qed.
 \end{minted}
+\caption{Proff that \lstinline|add_pair_Proper| is commutative.}
+\label{lst:nat-induction}
+\end{listing}
 
 % How proof assistants implement extensionality determines which type of complications the developing mathematicians face.
 
@@ -412,7 +379,10 @@ What Lean implements is Quot, quot lift, quot ind, and quot mk.
 
 \section{SR failures}\label{sec:sr_failures} % (fold)
 
-Lean, by its own admission fails at subject reduction. We show how it fails maybe by \cite[Carneiro's Thesis]{carneiro_2019}
+Lean, by its own admission fails at subject reduction.
+We show how it fails maybe by the example shown in \cite[Carneiro's Thesis]{carneiro_2019}.
+This is not the only example, but many of known examples are built in a similar manner.
+We take it as a good representative of
 
 % TODO: get some sr failures together
 
@@ -553,18 +523,18 @@ The used tools were OpenAI's ChatGPT, Perplexity AI's search tool and Lean commu
 
 % section AI Usage (end)
 
-\printbibliography
+\printbibliography[title={Bibliography}]
 
 \appendix
 
 \chapter{Setoid Hell Code}\label{chap:setoid_hell_code} % (fold)
 
 \section{SetoidHell.lean}
-\lstinputlisting[]{../src/Src/SetoidHell.lean}
+\inputminted{lean4}{../src/Src/SetoidHell.lean}
 
 \section{SetoidHell.v}
 
-\lstinputlisting[]{../src/SetoidHell.v}
+\inputminted{coq}{../src/SetoidHell.v}
 
 % chapter Setoid Hell Code (end)
 \end{document}
