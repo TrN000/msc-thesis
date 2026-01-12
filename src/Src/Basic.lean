@@ -5,6 +5,7 @@ import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 import Mathlib.LinearAlgebra.Basis.Defs
 import Mathlib.Data.Real.Basic
 import Mathlib.Data.Finset.Lattice.Basic   -- gives complement on Finset
+import Std.Tactic
 open LinearMap (BilinForm)
 /-!
 # Sylvester's Theorem
@@ -283,9 +284,8 @@ lemma kernel_imp_nonkernel_basis_coeff_zero
   swap
   · simp [B]
     intro j hj
-    apply ker_imp_nullform _ _ hb at hj
-    right
-    assumption'
+    apply ker_imp_nullform _ _ hb ortho at hj
+    exact Or.inr hj
   · simp at hB
     let apply_vi := congr_arg (fun φ => φ (v i)) w_eq
     simp at apply_vi

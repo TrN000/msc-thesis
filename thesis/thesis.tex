@@ -1,4 +1,4 @@
-\documentclass{amsbook}
+\documentclass[]{amsbook}
 \usepackage{minted}
 \usepackage{float}  % For [H] placement
 \usepackage[backend=biber,style=authoryear]{biblatex}
@@ -6,6 +6,7 @@
 \usepackage{xcolor}
 \usepackage{inconsolata}
 \addbibresource{./references.bib}
+\usepackage{amssymb}
 
 \usepackage[most]{tcolorbox}
 
@@ -26,6 +27,16 @@
   breaklines,
 }
 
+\usepackage{setspace}
+\onehalfspacing
+% \addtolength{\beforesecskip}{1em}
+% \addtolength{\aftersecskip}{1em}
+% \usepackage[margin=1.8in]{geometry}
+
+\usepackage{pdfpages}
+
+\usepackage{hyperref}
+
 % \usemintedstyle[lean4]{}
 \usemintedstyle[coq]{autumn}
 
@@ -44,91 +55,113 @@
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}   % the * makes it unnumbered
 
-\newcommand{\Z}{\mathopen{}\ensuremath{\mathbb{Z}}\mathclose{}}
-\newcommand{\C}{\mathopen{}\ensuremath{\mathbb{C}}\mathclose{}}
-\newcommand{\R}{\mathopen{}\ensuremath{\mathbb{R}}\mathclose{}}
-\newcommand{\ra}{\mathopen{}\ensuremath{\rightarrow}\mathclose{}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\C}{\ensuremath{\mathbb{C}}}
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\N}{\ensuremath{\mathbb{N}}}
+\newcommand{\ra}{\ensuremath{\rightarrow}}
+\newcommand{\Ra}{\ensuremath{\Rightarrow}}
+\newcommand{\uni}{\ensuremath{\mathcal{U}}}
+\newcommand{\Zero}{\mathbf{0}}
+\newcommand{\One}{\mathbf{1}}
+\newcommand{\rec}{\mathsf{rec}}
+\newcommand{\acc}{\mathsf{acc}}
 
 \newcommand{\joke}[1]{#1}
 
 \DeclareMathOperator{\id}{Id}
 \DeclareMathOperator{\Prop}{Prop}
 \DeclareMathOperator{\Quot}{Quot}
+\DeclareMathOperator{\Type}{Type}
+\DeclareMathOperator{\List}{List}
 \DeclareMathOperator{\Setoid}{Setoid}
 
-\title{Proof Assistants and Proof Formalization}
+\title{Setoids, Quotients and Formalization in Lean}
 \author{Nicolas Trutmann}
 \date{January 2026}
 
 \begin{document}
 
+\includepdf[pages=-]{plagiat-eigenstaendigkeitserklaerung.pdf}
+
 \maketitle
 
 \tableofcontents
 
-\chapter{Introduction to Dependent Type Theory for Proof Assistants}\label{chap:introduction_to_dependent_type_theory_for_proof_assistants} % (fold)
+\chapter*{Introduction}\label{sec:introduction} % (fold)
 
-\section{Introduction}\label{sec:introduction} % (fold)
+Type theory is a branch of formal logic concerned with the classification of terms by types and the rules governing their interaction.
+In its modern form, type theory serves as a foundation for formal systems in which mathematical statements and proofs can be represented as syntactic objects and mechanically verified.
+By shifting the burden of correctness checking to a computer, such systems aim to eliminate entire classes of errors that arise in informal mathematical reasoning.
 
-Type theory is a branch of formal logic.
-It aims to formalize terms and introduces the idea that each such term has an associated type.
-The aim is to bring the diligence of computers to mathematicians to take the burden of verification off them.
-This is done by creating a programming language which implements a formal language for which we have a correspondence to mathematical logic such that the objects of the language can be viewed as proofs and theorems. Syntactical correctness, which is relatively easy to verify, then corresponds to mathematical correctness.
-This idea has been implemented many times, resulting in a number of pieces of software named proof assistants, with subtle differences that create interesting emergent behavior.
-We will mainly focus on dependent type theory as a foundation for the Lean (specifically Lean4) Language.
+This approach has been realized through the creation of a number of software systems known as \emph{proof assistants}.
+These systems implement formal languages which are equipped with a correspondence between types and mathematical logic, such that the syntactic objects of the language can be interpreted as proofs and their types as theorems.
+Verifying that the terms of such a language are syntactically well formed, which is essentially a mechanical task, corresponds to mathematical correctness.
+While many proof assistants share this foundational idea, the differences in their underlying type theories give rise to distinct practical and theoretical behaviors.
 
-Lean has gained a substantial presence in the proof assistant space.
-This has many reasons, it allows working mathematicians to quickly state their theorems without sacrifices to syntax and notation, it has a rich ecosystem provided by Lean's mathlib, which acts as a centralized knowledge hub with a large quantity of theorems, and an easy setup system to lower the barrier of entry for nonprogrammer mathematicians.
+This thesis will mainly focus on dependent type theory as a foundation for the Lean proof assistant, specifically its current version Lean~4.
+Lean has gained a substantial presence in the proof assistant ecosystem.
+In part, this is due to its expressive and approachable syntax, its support for notation close to standard mathematical practice, and its extensive standard library, \emph{mathlib}.
+The latter acts as a centralized repository of formally verified mathematics and significantly lowers the barrier to entry for mathematicians without a programming background.
+Together with a relatively lightweight setup and an active user community, these features have contributed to Lean's growing adoption in both research and education.
 
-Another popular choice is Rocq (n\'ee Coq) which shares many similarities with Lean, which invites comparison.
-It differs at least a little in nearly all aspects, ranging from implementation to its theoretic foundations.
-We will take a closer look at one of those differences and try to shine a light on what practical implications follow from it.
+Another popular choice is Rocq (n\'ee Coq) which is likewise based on dependent type theory and both systems target formalization of mainstream mathematics.
+While Lean and Rocq share many foundational principles, they make distinct engineering and design trade-offs that affect both the structure and their long-term maintainability.
+Despite their shared theoretical roots, the two systems differ in several respects, ranging from kernel implementation details to aspects of the underlying type-theoretic framework.
 
-% what to write? wishy washy bit about proof assistants? mention practical section of the thesis. "we've implemented sylvester's theorem, as a joke"
-% should there be a bridge between fluff and theoretical bit? like "the lineage
-% of dependent types goes \lambda calc/set theoretic foundations -> typed lambda calc -> dependent types"
-%
+In this thesis, we examine one such difference and its consequences at both a theoretical and practical level.
+The focal point of this comparison concerns the handling of equivalence relations and rewriting.
+In settings where definitional equality is insufficient to identify mathematically equivalent objects, one is forced to reason explicitly with equivalence relations.
+This, in turn, requires the use of coherence proofs and transport lemmas to move terms across equalities.
+The accumulation of these obligations is colloquially known as \emph{setoid hell}, and it represents a well-known obstacle to formalization.
 
-\begin{redbox}
-  what is a proof assistant, why do proofs "hold" in a proof assistant, are there
-  options, which option have we chosen and why, what are we doing with it,
-  (eventually) what have we gotten out of this endeavor
-  \cite{avigad_foundations_2021}
-\end{redbox}
+We compare how Lean and Rocq address this phenomenon from the perspective of the working mathematician, using a simple illustrative example to highlight the practical differences between the systems.
+Lean's approach largely avoids setoid hell by extending the scope of definitional equality through additional mechanisms.
+However, these mechanisms introduce subtle metatheoretical complications whose origins are not immediately apparent.
 
-% section Introduction (end)
+A central reference that we will work with is the master's thesis of Mario Carneiro \cite{carneiro_2019}, which presents a counterexample showing that Lean's type theory fails to satisfy subject reduction, a property that is generally expected of well-behaved type systems.
+While the result itself is known within the Lean community, discussion of its causes and implications is typically scattered across informal online sources, such as forum posts and issue trackers, and is rarely presented in a unified or systematic manner.
+One of the goals of this thesis is to reconstruct and contextualize this counterexample, making explicit the chain of design decisions that lead to the failure of subject reduction, which will be discussed in detail in Section~\ref{sec:sr_failures}.
+Existing discussions are typically fragmented across informal online sources and tend to focus on isolated aspects of the issue, often lacking sufficient context or technical detail.
 
-\section{simply typed lambda calculus as a model of higher order logic}\label{sec:simply_typed_lambda_calculus_as_a_model_of_higher_order_logic} % (fold)
+As an auxiliary piece of work, this thesis includes a formalized proof of Sylvester's theorem.
+While this formalization is not necessary for the core theoretical ideas discussed in this thesis, it is not without independent value as a case study of nontrivial formalization.
+In particular, Sylvester's theorem is a goal in the roadmap of the mathlib library.
+During the development, several design choices were found to carry over poorly into Lean. As a result, this code is not presented as a finalized contribution but it is an axiom-free implementation which demonstrates feasibility and highlights which designs are unlikely to yield a full library-level implementation.
+The full code accompanying this thesis is available as a publicly accessible GitHub repository \cite{trutmann_lean_formalization}.
+A snapshot corresponding to the code referenced in this thesis is identified by a tagged release \footnote{v1.0-thesis} % TODO: pin this version before hand in.
 
-Alonzo Church developed lambda calculus in the 1930s to abstractly reason about computability.
-Lambda calculus was designed so that it would be syntactically small, which makes it easy to write down in its entirety in just a few lines.
-The language primitives are composed of variables, functions and function application.
+% chapter Introduction (end)
 
+\chapter{From lambda calculus to simple types}\label{chap:introduction_to_dependent_type_theory_for_proof_assistants} % (fold)
+
+We begin with a brief section on untyped lambda calculus, as it forms the core of the underlying dependent type theory that we will need in the following chapters.
+The purpose of this section is to fix notation and terms of a minimal formal language for functions and computation.
+These, notably application, substitution, and reduction, will persist, largely unchanged through the transition from simply typed lambda calculus to dependent type theory.
+We loosely follow the exposition presented in \cite{hottbook}, adapted to our narrower focus.
+
+\section{Untyped lambda calculus}\label{sec:untyped_lambda_calculus} % (fold)
+
+The terms of the untyped lambda calculus are generated by the grammar
 \begin{align*}
-  % TODO: fix typesetting
-  \text{expression} & := \text{variable} | \text{function} | \text{application} \\
-  \text{function}   & := \lambda \text{variable} . \text{expression} \\
-  \text{application} & := \text{expression} \text{expression} \\
+  \text{expression} & ::= \text{variable} \mid \text{function} \mid \text{application} \\
+  \text{function}   & ::= \lambda \text{variable} .\, \text{expression} \\
+  \text{application} & ::= \text{expression}\  \text{expression} \\
 \end{align*}
-
+where variables vary over a countable set.
+The term $\lambda x.\, t$ represents a function with formal parameter $x$ and body $t$ and the application $t\,u$ represents the application of a function $t$ to an argument $u$.
 Since function application is written by juxtaposition, the only syntactically necessary symbols are "$\lambda$" and "." to construct functions.
-Parentheses are also used to group expressions, meaning $(E)$ is equal to $E$.
+Parentheses are used to group expressions, meaning parentheses do not change the underlying expression.
+Application is left associative, so \(t\,u\,v\) reads as \((t\,u)\,v\).
 
-As an example, consider the identity function.
+A central operation in the lambda calculus is substitution.
+Given a term $t$, a variable $x$, and a term $u$, we write $t[u/x]$ for the term obtained by replacing all free occurrences of $x$ in $t$ by $u$.
+Substitution provides the mechanism by which function application is interpreted as computation.
 
-\[
-  \id \equiv \lambda x.x
-\]
-
-For any application $\id y$, we substitute every occurence of the bound variable to the right of the dot.
-So $\id y \equiv (\lambda x.x) y = y$.
-
-The last step of applying $y$ and rewriting the expression inside the function is called \textbf{$\beta$-redex}.
-It is also written by juxtaposing a square bracket noting the substitution to be carries out.
-An application $(\lambda x.y) z$, would then be written as $y[z/x]$ and is called a \textbf{$\beta$-contract}.
-This is not part of the syntax of lambda calculus but helps with legibility.
-We say a term $s$ \textbf{$\beta$-reduces to} $t$ if we can obtain t from $\beta$ redexes of $s$.
-We can illustrate this by verifying that $\id \id$ $\beta$-reduces to $\id$.
+As an example we will look at the identity function.
+\[ \id \equiv \lambda x.x \]
+For any application $\id y$, we substitute every free occurrence of the bound variable in the body of the abstraction.
+So $\id y \equiv (\lambda x.\,x) y = y$.
 
 \begin{align*}
          &\  \id \id \\
@@ -138,95 +171,629 @@ We can illustrate this by verifying that $\id \id$ $\beta$-reduces to $\id$.
   \equiv &\  \id
 \end{align*}
 
-The formulation of simple type theory resembles models\footnote{in the strict sense of the definition of model theory for set theory} where models of first order logic formulas are built from sets, but using ((many?) sorted?) expressions from lambda calculus. 
+The last step demonstrates substitution by applying $y$ and rewriting the body of the abstraction.
+An expression of the form $(\lambda x.t)u$ is called a \textbf{$\beta$-redex}.
+Its reduction, given by the substitution $t[u/x]$, is called a \textbf{$\beta$-contraction}.
+We say a term $t$ \textbf{$\beta$-reduces to} $u$ if we can obtain $u$ from a finite sequence of $\beta$-contractions of $u$.
+We can illustrate this by verifying that $\id \id$ $\beta$-reduces to $\id$.
+We write $t\, \rightsquigarrow\, u$ to say that $t$ reduces to $u$.
 
-%% TODO: does it matter that we use higher order logic or is it fine, because we built the higher order from first order?
+% subsection untyped lambda calculus (end)
 
-%% TODO: also possible to build equivalently using `=` as definition and construct other terms from it.
+\section{Simply typed lambda calculus}\label{sec:simply_typed_lambda_calculus} % (fold)
 
-We build the axiom of choice by a choice operator $\varepsilon_{\alpha}$ of type $(\alpha \ra Prop) \ra \alpha$.
-So for any predicate $P\ : \ (\alpha \ra Prop)$, $\varepsilon_{\alpha} P$ chooses an $x$ such that $Px$.
-It is convenient to hold a double viewpoint, with $P$ as a function on the type $\alpha$ and another where $P$ is viewed as a subset of the set of all elements of type $\alpha$, namely the subset of all $x$ such that $Px$ holds.
+The untyped lambda calculus provides a minimal framework of functions and computation, but it places no restrictions on how terms may be formed or applied.
+The simply typed lambda calculus refines this system by assigning types to terms and restricting application to type-correct instances.
+This addition enforces a notion of well-formedness and allows for interpreting types as statements in propositional logic.
 
-%% TODO: can I equate sets and types in the sense of models? unlikely. see todo above.
-
-This is fine, but impractical.
-This is usually extended byproof assistants by allowing the user to create definitions, variable substitutions on terms and variable substitution on types.
-In simple type theory, the last point is not even a semantically meaningful sentence, as we'll soon see.
-
-% TODO: add types
-
-Now we add types to this.
-We begin by notation, saying that a term $t$ is of type $T$, by writing $t:T$.
-We will have to decide what a type $T$ is, and a place for them to live, so that we can make sense of an expression like $T \in \mathcal{T}$.
-On top of that we have to define what kind of hierarchy these types have amongst one another.
-This line of thought is prompted by asking "what is the type of a type?".
-
-Setting answers aside for a moment, we first have to bring $\lambda$-calculus together with types in the first place, so we will momentarily pretend to know what a type is.
-
-Going through the syntax definition of $\lambda$-calculus, we first have to give expressions a type.
-We denote them by capital letters, and live with the opaque nature of them for now. % this sentence sucks
-
+The types of simply typed lambda calculus are formed by a collection of basic types and a single type constructor for the type of functions.
+More formally, the grammar of types is given by
+\[ \tau ::= \tau \ra \tau \mid T \]
+where $T$ is a basic type.
 Let $x:A$ be a variable of type $A$, and $y:B$ a term of type $B$, we denote the type of a function $\lambda x.y$ by $A \ra B$.
+As for function application, for a function $(\lambda x.y)$ of type $(A \ra B)$ and a variable of type $z:A$, the application $(\lambda x.y)z$ is a term of type $B$.
 
-Finally, function application should then be $(\lambda x.y)z$ of type $(A \ra B) A$, which should reduce to $B$.
+Typing judgments are made relative to a \emph{context}, which consists of all previously made assumptions about the types of free variables.
+A context is a finite list of variable-type assignments 
+\[ \Gamma \; \equiv \; x_1 : A_1, \dots, x_n : A_n \]
+where each variable appears at most once.
+Intuitively, the judgment $\Gamma \vdash t : A$ asserts that the term $t$
+has type $A$ under the assumptions recorded in $\Gamma$.
 
-% This establishes simple type theory as a model, alongside set theory, of logic. %%% TODO: better reference to models, halbeisen's book? ok, work it into text
-\cite{halbeisen_combinatorial_2025}
+The validity of a typing judgment is determined by showing that it can be derived by a sequence of valid typing rules.
+These rules govern the formation of valid types and are as follows.
+Given a collection of constant symbols, each with an associated type, we have
 
-% TODO: sort of translation guide between set theorists and type theorists
+\[
+\begin{aligned}
+    & \frac {x : A \in \Gamma }{\Gamma \vdash x : A }
+    & \frac {c \text{ is a constant of type } C}{\Gamma \vdash c : C} \\
+    & \frac {\Gamma ,x : A \vdash e : B }{\Gamma \vdash (\lambda x : A .\, e) \,: \, (A \ra B)}
+    & \frac {\Gamma \vdash e_1 : A \ra B \quad \Gamma \vdash e_2 : B }{\Gamma \vdash e_{1} \, e_2 : B }
+\end{aligned}
+\]
 
-% section simply typed lambda calculus as a model of higher order logic (end)
+This extension of untyped lambda calculus retains its term language and all of its properties of function abstraction and computation while imposing a strong restriction by requiring terms to remain well typed.
+In particular, if a term is well typed, all of its reductions will also be well typed.
+This property is called \emph{subject reduction}, and ensures that computation does not invalidate typing judgments.
+This property will feature prominently in the following chapters.
 
+Simply typed lambda calculus also enjoys other desirable properties, such as strong normalization, but we will not develop them here as they don't play a direct role in our work.
 
-\section{dependent type theory}\label{sec:dependent_type_theory} % (fold)
+Via the Curry-Howard correspondence, types in the simply typed lambda calculus may be interpreted as propositions, and terms as proofs.
+Under this interpretation, the function type $A \ra B$ corresponds to implication, and function abstraction and application correspond to implication introduction and elimination respectively.
 
-This has an immense shortcoming. The language we have described so far doesn't allow us to talk \emph{about} types, only \emph{with} types.
-Take for example an algebraic structure like a group.
-While we may be able to talk about the elements of such a group, we do not have the tools necessary to generalize this to statements about \emph{all types which are groups}.
-Types and terms are kept strictly separate and we can't quantify over them.
-This distinction of therms and types is not present in set theory.
-Think for example, of the symbol $\Z$, which, in type theory, would be clearly categorized as a type, however this renders common notations such as "$n\Z$" syntactically meaningless.
-In set theory on the other hand, both $\Z$ and $n\Z$ are clearly sets (for lack of options) and the second expressions is simply a slight abuse of notation for a perfectly legal construction of a set.
+Concretely, a type $A$ is read as a proposition $A$; a judgment $\Gamma \vdash t:A$ is read as "$t$ is a proof of proposition $A$ under assumptions $\Gamma$"; the function type $A \ra B$ corresponds to the implication $A \Ra B$.
 
-% TODO: mention difference of types as props and types as _some_ props
+In natural deduction, implication introduction takes the form
+\[\frac{\text{ assume } A \vdash B}{A \Ra B}\]
+which corresponds to the typing rule 
+\[\frac {\Gamma ,x : A \vdash e : B }{\Gamma \vdash (\lambda x : A .\, e) \,: \, (A \ra B)}\]
 
-% TODO: do equality types go here?
+As for implication elimination, the natural deduction rule is
+\[\frac{A \Ra B \quad A}{B}\]
+which corresponds to
+\[\frac{\Gamma \vdash e_1 : A \ra B \quad \Gamma \vdash e_2 : B }{\Gamma \vdash e_{1} \, e_2 : B }\]
 
-% section dependent type theory (end)
+This perspective motivates the use of typing judgments as a foundation for logical reasoning and provides the conceptual bridge to dependent type theory.
+
+% subsection simply typed lambda calculus (end)
 
 % chapter Introduction to Dependent Type Theory for Proof Assistants (end)
 
+\chapter{Dependent type theory for proof assistants}\label{chap:dependent_type_theory} % (fold)
+
+Despite this expressive power, which is sufficient for propositional logic, simply typed lambda calculus is still missing many important features that are desired in proof assistants.
+One limitation is that this system lacks data dependent behavior.
+Types cannot depend on terms, and many constructions, such as quantified propositions and inductive types, cannot be expressed directly.
+To do this we have to turn to a richer type system in which the boundary between types and terms is more flexible.
+Dependent type theory provides precisely this additional structure.
+
+\section{Universes and types for types}\label{sec:types_for_types} % (fold)
+
+The defining feature of dependent type theory is that types themselves may vary as a function of terms.
+Concretely, a type may be indexed by a value, so that different values give rise to different types.
+This will allow us to pick a term $x:A$, and consider a dependent type $B(x)$ whose shape or inhabitants depend on the particular choice of $x$.
+A classic example of such types are data structures that are indexed by a notion of size, such as lists of length $n$, or $m\times n$-matrices.
+This kind of type can't be expressed in the simply typed setting where types and their terms were kept strictly separate.
+
+Allowing types to depend on terms raises an immediate question: how are types themselves classified?
+In dependent type theory, types are treated as first-class objects, which means that we must be able to assign them types as well.
+To resolve this, we introduce \emph{universes} to define types whose elements are types.
+Let $\uni$ be a universe of types, and write $A : \uni$ to indicate that $A$ is a type contained in $\uni$.
+Given an element $x:A$, a \emph{dependent family of types} is a function $B:A \ra \uni$ that assigns a type $B(x):\uni$.
+
+Universes are not collected into a single "type of all types", as such an object would lead to logical inconsistency.
+Instead, types are stratified into a hierarchy of universes, whose precise structure is a design choice of the underlying type theory.
+We write $\uni_i$ for the $i$-th universe level, and $A : \uni_i$ to indicate that the type $A$ lives at level $i$.
+
+In the setting considered here, following Lean, a \emph{noncumulative} hierarchy is adopted, in which universe levels are kept distinct, and no inclusion between them is assumed by default.
+In other systems universes are organized in a \emph{cumulative} order, in which a universe is contained in the next universe, yielding to a linear hierarchy of types
+\[\uni_0 : \uni_1 : \uni_2 : \dots \]
+where universes stack and each universe $\uni_i$ is included in all higher universe levels.
+
+We will remain largely agnostic about the precise universe implementation, mentioning it only insofar as it is relevant.
+
+% subsection types for types (end)
+
+\section{Dependent quantification: \texorpdfstring{$\Pi$- and $\Sigma$-types}{Pi- and Sigma-types}}\label{sec:dependent_quantification_pi_and_sigma_types} % (fold)
+
+Just as types are allowed to depend on terms, we can generalize the notion of function types to be dependent.
+In simply typed lambda calculus, a function type $A \ra B$ describes functions that map elements of $A$ to elements of a fixed codomain $B$.
+In dependent type theory, the codomain may vary with the input.
+This leads to the notion of a \emph{dependent function type}, also known as a \emph{$\Pi$-type}.
+
+Let $A : \uni$ be a type and let $B : A \ra \uni$ be a dependent family of types.
+The dependent function type associated to $A$ and $B$ is written
+\[\Pi (x:A), B(x)\]
+and denotes the type of functions which, given an input $x : A$, return an
+element of $B(x)$. Notation for this construction varies across the literature;
+common alternatives include $\Pi_{x:A} B(x)$ or $(x:A)\ra B(x)$. Here we
+adopt the $\Pi$-notation, as it closely resembles ordinary function abstraction
+and aligns well with the syntax of lambda terms.
+
+Dual to $\Pi$-types are \emph{$\Sigma$-types}, which generalize product types in the presence of dependency.
+Given a type $A : \uni$ and a dependent family $B : A \ra \uni$, the $\Sigma$-type
+\[\Sigma (x:A), B(x)\]
+consists of pairs $(a, b)$ where $a : A$ and $b : B(a)$.
+When $B$ is constant, this reduces to the ordinary product type $A \times B$.
+Logically, $\Sigma$-types correspond to existential quantification, capturing the idea of an element together with evidence that it satisfies a property.
+
+Together, $\Pi$- and $\Sigma$-types provide the basic mechanisms for expressing quantification in dependent type theory.
+They subsume the function and product types of simpler systems, but their expressive power goes significantly further: they allow statements to quantify not only over values, but over values together with the types that depend on them.
+
+From a logical perspective, $\Pi$-types correspond to universal quantification.
+A term of type
+\[\Pi (x:A), B(x)\]
+can be read as a uniform construction which, for every $x : A$, produces evidence of $B(x)$.
+For example, if $A$ is a type of natural numbers and $B(x)$ expresses a property of $x$, then a term inhabiting this $\Pi$-type represents a proof that the property holds for all natural numbers.
+In the special case where $B(x)$ does not depend on $x$, this reduces to an ordinary implication $A \ra B$.
+
+Dually, $\Sigma$-types correspond to existential quantification.
+A term of type
+\[\Sigma (x:A), B(x)\]
+consists of a specific witness $a : A$ together with evidence that $B(a)$ holds.
+Thus, $\Sigma$-types internalize the notion of "there exists an $x$ such that $B(x)$", again generalizing the ordinary product type.
+When $B$ is constant, $\Sigma (x : A), B$ is definitionally equivalent to $A \times B$.
+
+% subsection Dependent quantification: $\Pi$- and $\Sigma$-types (end)
+
+\section{Inductive types}\label{sec:inductive_types} % (fold)
+
+We have presented several ways to construct new types from old ones.
+Many of these constructions are special cases of inductive types, which provide a coherent way to define interesting data structures.
+In the remaining sections, we give a brief introduction to inductive types.
+
+At an intuitive level, an inductive type may be understood as a type freely generated by a collection of constructors.
+That is, an inductive definition specifies a set of basic constructors, and the elements of the type are obtained by finitely iterating these constructors.
+Terms are built constructively from these constructors, and proof assistants can work on them by syntactic operations like pattern matching and recursion.
+
+Before considering types with recursive definitions, it is instructive to begin with simple, non-recursive examples.
+The empty type, denoted $\Zero$, is the trivial case of an inductive type with \emph{no} constructors, and therefore has no inhabitants.
+The unit type, $\One$, is the type with a single constructor and exactly one inhabitant, which is usually denoted $\star : \One$.
+Similarly, the two-element type $\mathbf{2}$ can be presented as an inductive type with two constructors,
+
+\begin{itemize}
+  \item $0_{\mathbf{2}} : \mathbf{2}$
+  \item $1_{\mathbf{2}} : \mathbf{2}$
+\end{itemize}
+
+More interesting examples arise when we allow for self-referential, recursive definitions.
+Recursive definitions allow the type itself to appear as an argument in its type constructors.
+The canonical example is the type of the natural numbers $\N$, whose constructors are
+
+\begin{itemize}
+  \item $0 : \N$
+  \item $s : \N \ra \N$
+\end{itemize}
+
+Here $\N$ is characterized as a type that contains zero, and is closed under the successor function.
+Similarly, the type $\List(A)$, that is finite lists of type $A$, is also defined by an initial anchor element and a recursive function that generates new elements.
+
+\begin{itemize}
+  \item $\text{nil} : \List(A)$
+  \item $\text{cons} : A \ra \List(A) \ra \List(A)$
+\end{itemize}
+
+It should be noted that at this point, it need not be true that such a type exists, or that if it does, it is also unique.
+A precise treatment of inductive types—including their existence, uniqueness up to equivalence, and semantic interpretation in models of type theory—may be found in standard references such as~\cite{Martin-Lof1984-ui,hottbook}.
+
+For the purposes of this thesis, it suffices to view inductive types as freely generated types equipped with canonical constructors and elimination principles, serving as the foundation for computation in dependent type theory.
+
+% subsection inductive types (end)
+
+\section{Recursors}\label{sec:recursors_and_the_accessor_type} % (fold)
+
+In addition to their constructors, inductive types are equipped with canonical elimination principles, which specify how to define functions and proofs by recursion and induction, depending on whether their codomain is a type or a proposition.
+The associated computation rules are often referred to as the $\iota$-rules.
+
+For each inductive type, the recursor is a constant whose type encodes the induction principle for that type.
+
+In the case of the natural numbers, this recursor has the following type
+
+\[
+    \rec_{\N} : \Pi (C:\N \ra \Type), C\,0 \ra \bigl(\Pi n:\N,\, C\,n \ra C\,(n+1)\bigr) \ra \Pi n:\N,\, Cn
+\]
+
+Here, the argument $C: \N \ra \Type$ is called the \emph{motive} of the recursion or induction.
+It specifies the type (or proposition) that we wish to define or prove over $\N$.
+The remaining arguments consist of a base case, given by $C\,0$, and a step function $\Pi n, C\,n \ra C(n+1)$, which, given a proof of $C\,n$, produces a proof of $C\,(n+1)$.
+
+Recall that the natural numbers were defined inductively by $0$ and the successor function $\mathsf{s}$.
+We can see that a proof by induction is given by a proof for each constructor of the inductive definition.
+This implies that, if we have a proof for every constructor, it amounts to a proof for the entire type.
+
+The $\iota$-reduction gives a rule for how to compute these objects.
+This states that a recursor evaluated on a constructor yields that particular case.
+Given a motive $C$, a base case $a: C\,0$, and a step function $f$, the recursor defines a term of type  $\Pi n,\; C\,n$, formally:
+
+\[
+    \rec_{\N}\; C\, a\, f : \Pi n:\N,\, Cn
+\]
+
+In the case of natural numbers, this implies two rules, one for $0$ and one for the successor function $\mathsf{s}$:
+
+\begin{itemize}
+  \item $\rec_{\N}\; C\, a\, f\, 0 \; \equiv \; a$
+  \item $\rec_{\N}\; C\, a\, f\, (\mathsf{s}(n)) \; \equiv \; f\, n\, (rec_{\N}\; C\, a\, f\, n)$
+\end{itemize}
+
+The first equation states that recursion at $0$ yields the base case.
+The second expresses the recursive step: the value at $\mathsf{s}(n)$ is obtained by applying the step function to $n$ and the recursively computed result at $n$.
+
+The second equation is, in fact, the namesake of the recursor, as actual recursion is taking place.
+It should be noted that for general inductive types, this need not be the case, for which the naming is a bit unfortunate.
+
+It is important to note that this form of computation is entirely data-driven.
+Reduction depends only on the syntactic shape of the inductive term involved, and not on any other proof objects.
+This property ensures that definitions by recursion enjoy predictable reduction behavior and preserve subject reduction in a straightforward manner.
+
+% subsection recursors (end)
+
+\section{Accessibility and well-founded recursion}\label{sec:accessibility_and_well_founded_recursion} % (fold)
+
+A standard example of an inductive family is the \emph{accessibility predicate}, which is commonly used to justify definitions by well-founded recursion.
+We include it here following its presentation in Carneiro's work, where it serves as a compact illustration of how inductive definitions are used to encode recursion principles inside the type system.
+In the present context, it functions primarily as a showcase of the expressive power of inductive families, rather than as a tool that will be used directly in subsequent developments.
+
+Intuitively, accessibility expresses that an element is well-founded with respect to a given relation: an element is accessible if all of its predecessors are accessible.
+Unlike earlier inductive types that describe concrete data, accessibility encodes a property of elements via a recursively defined proof object.
+
+Let $\alpha$ be a type and let $< \;:\; \alpha \ra \alpha \ra \Prop$ be a binary relation.
+The accessibility predicate is an inductive family
+\[
+  \acc_< : \alpha \ra \Prop
+\]
+defined by a single constructor:
+
+\[
+  \mathsf{intro} :
+    \forall x : \alpha, \;
+    \bigl(\forall y : \alpha,\; y < x \ra \acc_<(y)\bigr)
+    \ra \acc_<(x).
+\]
+
+Thus, a proof of $\acc_<(x)$ consists of a function which, given any predecessor $y$ of $x$, produces a proof that $y$ is itself accessible.
+This definition is recursive: the constructor for $\acc_<(x)$ refers to $\acc_<(y)$ for strictly smaller elements $y$.
+
+The inductive nature of $\acc_<$ ensures that accessibility cannot be assumed arbitrarily: a proof of $\acc_<(x)$ must be obtained by applying the constructor, and therefore requires proofs of accessibility for all predecessors of $x$.
+
+As with all inductive families, $\acc_<$ comes equipped with a recursor.
+Specialized to propositions, this recursor expresses induction on accessibility.
+
+Given a family of propositions
+\[
+  C : \Pi x : \alpha,\; \acc_<(x) \ra \Prop,
+\]
+informally, to define a proof of $\Pi x : \alpha.\, \Pi h : \acc_<(x),\, C(x,h)$, it suffices to provide a function which, assuming $C(y,h_y)$ for all predecessors $y < x$, produces $C(x,\mathsf{intro}(\ldots))$.
+
+Unlike the recursor for the natural numbers, the recursive structure of $\acc_<$ is not driven by a simple syntactic argument such as a predecessor function.
+
+This chapter has introduced the basic components of dependent type theory that will be used in the remainder of the thesis.
+The emphasis has been on fixing terminology and presenting concrete mechanisms, rather than on completeness or metatheoretical results.
+In the next chapter, we shift focus from the theory itself to its use in practice, and examine how choices about equality and reduction affect formalization, leading to what is commonly described as setoid hell.
+
+% subsection Accessibility and well-founded recursion (end)
+
+% section dependent type theory (end)
+
+\chapter{Investigating setoid hell}\label{chap:investigating_setoid_hell} % (fold)
+
+\section*{Equality and Metatheory}
+
+In discussions surrounding proof assistants based on dependent type theory, the expression "setoid hell" is often invoked to describe a particular pattern of difficulty encountered during formalization.
+The term is informal and polemical, yet it points out a recurring technical experience: proofs become cluttered with auxiliary obligations arising from explicit equivalence relations, rewriting becomes verbose, and even conceptually simple proofs require significant bookkeeping.
+Although the phenomenon of setoid hell is straightforward to describe, its underlying causes, as well as the reasons it manifests differently in Lean, are difficult to disentangle.
+We therefore examine the contributing factors in detail to present a coherent account of the situation.
+We will investigate setoid hell as a structural consequence of design choices in implementations of dependent type theories.
+As a guiding question, we ask whether the difficulties commonly grouped under the term "setoid hell" are unavoidable, given certain metatheoretical constraints.
+
+The immediate motivation for this investigation comes from two public discussions.
+The first is a Lean community discussion on subject reduction and definitional equality, in which Mario Carneiro and others explain why Lean's kernel permits certain reductions that violate classical metatheoretical properties, and why this behavior is intentional \cite{lean-zulip-subject-reduction}.
+The second is a design discussion in the Rocq repository responding to claims that Lean avoids setoid hell through its support for quotient types, while Rocq developments often rely heavily on setoids \cite{rocq-setoid-hell}.
+
+Setoid hell is often cited as an argument in favor or against either Lean or Rocq, with the claim that the working mathematician will be better enabled to do pragmatic work in Lean, whereas in Rocq they would have to deal with setoids.
+The failure of subject reduction thereby incurred is viewed as acceptable, as it does not damage the soundness of Lean's type system.
+On the other hand, in the Rocq ecosystem, the prevailing opinion is that metatheoretical guarantees outweigh the benefits of quotient types, and that the implementation of quotient types at the level of Lean's kernel opens the door to numerous problems.
+For instance, Rocq advertises itself not only as a proof assistant, but also as a tool for writing verified programs, where guarantees of metatheoretical correctness have much more weight.
+Together, these discussions reveal a tension between kernel-level metatheoretical guarantees and user-facing proof ergonomics.
+
+The purpose of this thesis is not to resolve this tension in favor of one system or the other, but to explain it.
+We aim to make precise what is meant by setoid hell, to clarify the role of quotient types in mitigating it, and to examine the costs that arise when quotient reasoning is integrated into definitional equality.
+
+The phrase "setoid hell" is rhetorically charged, which may suggest frustration or even failure of the system containing it.
+For the purposes of this thesis, however, it is important to detach the phenomenon from the rhetoric, and analyze it on a purely technical level.
+
+\section{Setoid hell}\label{sec:setoid_hell} % (fold)
+
+The term \emph{setoid hell} refers to a characteristic pattern of complexity that arises when reasoning in type theory with explicit equivalence relations.
+It denotes a situation in which a mathematical construction is represented by a type together with an equivalence relation (a \emph{setoid}), and where this equivalence must be threaded explicitly through definitions, lemmas, and proofs.
+Specifically, for some carrier type $\alpha$, and a relation $~$, instead of a standalone type $\alpha/~$ for the quotient, a setoid is a data structure \[(\alpha,\, ~)\] with both the underlying type and the relation unaltered.
+
+In such developments, functions are required to be shown compatible with the equivalence relation, rewriting must be performed with respect to that relation rather than definitional equality, and even elementary arguments often require auxiliary proofs of respectfulness or properness.
+As a result, the structure of a proof is frequently dominated not by its mathematical content, but by bookkeeping obligations arising from the chosen representation.
+
+Properness here means that properties of the underlying type respect the equivalence relation associated with the setoid.
+Precisely, let $\alpha$ and $\beta$ be types equipped with equivalence relations $\sim_\alpha$ and $\sim_\beta$, respectively.
+A function $f : \alpha \ra \beta$ is said to be \emph{proper} (or \emph{respectful}) with respect to these relations if it preserves equivalence, that is, if
+\[
+  \forall x\, y : \alpha,\; x \sim_\alpha y \;\Rightarrow\; f(x) \sim_\beta f(y).
+\]
+In other words, $f$ does not distinguish between equivalent inputs.
+
+Setoid hell is therefore not a single technical obstacle, but an accumulation of friction points.
+Typical symptoms include the pervasive use of setoid rewriting, the need to register equivalence relations and morphisms as instances, and the repetition of proofs establishing that constructions respect the underlying equivalence.
+These obligations are local and routine, yet collectively they can obscure the intended argument and increase proof size.
+
+Importantly, setoid hell is not the result of incorrect formalization, nor does it indicate a deficiency of the underlying type theory.
+Rather, it reflects a mismatch between mathematical practice, which often treats equivalent objects implicitly as equal, and formal systems that require equivalence relations to be made explicit.
+Whether this mismatch is best addressed through quotient types, enhanced automation, or stronger metatheoretical guarantees is a design question, and one that will be examined in the following sections.
+
+% section setoid hell (end)
+
+\subsection{Subject reduction and program extraction}\label{subsec:sr_and_extraction}
+
+One context in which subject reduction plays a particularly important role is program extraction.
+Rocq is intended not only as a proof assistant, but also as a system for writing and verifying executable programs inside the type theory.
+In this setting, terms are reduced during evaluation, and extracted programs are expected to faithfully reflect the computational behavior of the original definitions.
+
+Subject reduction guarantees that reduction preserves typing.
+As a consequence, computation can be understood independently of typing: reducing a term cannot change the type it inhabits.
+This property simplifies the metatheory of extraction and supports classical metatheoretical results such as normalization and canonicity, which are used to justify the correctness of extracted code.
+
+Lean also supports program extraction, but its kernel-level notion of definitional equality does not satisfy subject reduction in full generality.
+This does not make extraction in Lean unsound, but it does mean that the metatheoretical guarantees typically associated with extraction must be stated more carefully.
+From the Rocq perspective, preserving subject reduction therefore serves as a foundation for a predictable theory of computation, even if the benefits of this choice are not immediately visible in everyday interactive formalization.
 
 
+\section{Quotient types in Lean}\label{sec:quotient_types} % (fold)
+
+Quotient types in Lean provide a mechanism for identifying elements of a type modulo a given relation while retaining a computational interpretation.
+Unlike setoid-based approaches, which externalize equivalence reasoning into propositional proofs, Lean's quotients are implemented directly at the kernel level.
+As a result, quotient types interact with definitional equality and reduction in a way that is fundamentally different from ordinary inductive types.
+This section describes the primitive constants that implement quotient types in Lean and explains their intended use.
+
+Quotient types are implemented at the kernel level by five primitives:
+\mintinline{lean4}{Quot}, \mintinline{lean4}{Quot.mk}, \mintinline{lean4}{Quot.lift}, \mintinline{lean4}{Quot.sound}, and \mintinline{lean4}{Quot.ind}.
+
+\begin{itemize}
+  \item  \mintinline{lean4}{Quot}, the type former of the quotient type.
+  \item  \mintinline{lean4}{Quot.mk}, which places elements of the underlying type into the quotient.
+  \item  \mintinline{lean4}{Quot.lift}, which allows the definition of functions from the quotient to some other type.
+  \item  \mintinline{lean4}{Quot.sound}, which asserts the equality of elements related by the underlying equivalence relation.
+  \item  \mintinline{lean4}{Quot.ind}, which is used to write proofs about quotients by assuming that all elements are constructed with \mintinline{lean4}{Quot.mk}.
+\end{itemize}
+
+These definitions can be found in Lean's source code in \cite[lean4/src/kernel/quot.h at master (at time of writing)]{lean4_source}
+
+For types $\alpha$, $\beta$, a relation $r : \alpha \ra \alpha \ra \Prop$, and a function $f: \alpha \ra \beta$, these are defined as follows
+
+\begin{minted}{lean4}
+
+  Quot {α : Sort u} (r : α → α → Prop) : Sort u
 
 
-
-\chapter{Investigating Setoid Hell}\label{chap:investigating_setoid_hell} % (fold)
-
-\section{Setoid Hell}\label{sec:setoid_hell} % (fold)
-
-Setoid hell is often cited as an argument in favor of Lean over Rocq, arguing that the working mathematician will be better enabled to do pragmatic work in Lean, whereas in Rocq they would have to deal with setoids, that is a structure consisting of the underlying type and an equivalence relation, instead of a quotient type, that makes the underlying construction "irrelevant" (irrelevant in the sense that it is not in the way).
-
-The narrative throughline we pick to investigate this problem is to begin with an example of setoids and quotients in both Lean and Rocq, and work our way backwards through definitions to root-cause the distinguishing attributes of both systems that give rise to this phenomenon.
-
-Lean offers a function $\Quot$, which, for a predicate $r: \alpha \ra \alpha \ra \Prop$, that constructs a new type from equivalence classes of $\alpha$ based on $r$.
+  Quot.mk {α : Sort u} (r : α → α → Prop) (a : α) : Quot r
 
 
-By contrast, in Coq, one defines a {\it setoid}, which is composed of the carrier type, the equivalence relation, and a proof that the relation is well defined.
+  Quot.lift {α : Sort u} {r : α → α → Prop} {β : Sort v}
+      (f : α → β)
+      : (∀ a b : α, r a b → Eq (f a) (f b)) → Quot r → β
 
-While in Lean the equivalence relation is, to a large extent, hidden and thereby out of the way of the user, In Coq the user is regularly forced to appeal to well-definedness for proofs involving the setoid.
 
-We demonstrate this by example, as the actual effect of this problem is not accurately captured by a description alone.
+  Quot.sound.{u} {α : Sort u} {r : α → α → Prop} {a b : α}
+      : r a b → Quot.mk r a = Quot.mk r b
+
+
+  Quot.ind {α : Sort u} {r : α → α → Prop} {β : Quot r → Prop}
+      : (∀ a : α, β (Quot.mk r a)) → ∀ q : Quot r, β q
+
+\end{minted}
+
+The role of \mintinline{lean4}{Quot.lift} is particularly important.
+It enforces the fundamental constraint of quotient constructions: any function defined on equivalence classes must be independent of the chosen representative.
+This requirement is expressed by the proof obligation
+\[
+  \forall a\, b : \alpha,\; r\, a\, b \ra f\, a = f\, b,
+\]
+which ensures that the resulting function on the quotient is well defined.
+
+As a simple example, if $\alpha$ is a type equipped with a relation $r$ and $f : \alpha \ra \beta$ respects $r$, then \mintinline{lean4}{Quot.lift f} defines a function \mintinline{lean4}{Quot r → β} that computes by applying $f$ to a representative.
+Lean treats such applications as if the quotient element were constructed using \mintinline{lean4}{Quot.mk}, a fact that will become important when discussing reduction behavior.
+
+While we have discussed quotient types primarily in the context of equivalence relations, Lean does \emph{not} require the relation $r$ to be an equivalence relation.
+The kernel primitives make no assumptions about reflexivity, symmetry, or transitivity.
+From a purely logical perspective, \mintinline{lean4}{Quot r} is therefore a quotient by an arbitrary binary relation.
+
+In practice, however, quotient types are overwhelmingly used with equivalence relations.
+Only in this case does the quotient admit the intended interpretation as a type of equivalence classes, and only then does \mintinline{lean4}{Quot.sound} correspond to a familiar identification principle.
+Accordingly, the remainder of this thesis will focus on quotients by equivalence relations, as these are the cases that arise naturally in mathematical formalization and that give rise to the metatheoretic phenomena discussed in later sections.
+
+% section Quotient types (end)
+
+\section{Subject reduction failure}\label{sec:sr_failures} % (fold)
+
+We can now turn to the central technical point of this chapter. We will investigate how exactly Lean's kernel fails to satisfy subject reduction.
+Recall the subject reduction property: if a term $t$ is well typed and $t$ reduces to $t'$, then $t'$ is well typed as well.
+In a dependently typed setting, this is usually stated as: if $\Gamma \vdash t : A$ and $t \rightsquigarrow t'$, then $\Gamma \vdash t' : A$.
+Subject reduction requires, in essence, that computation in a typed system is harmless: we may simplify subterms without breaking the typing derivation.
+
+Lean does not satisfy subject reduction for its kernel-level definition of definitional equality.
+This is not accidental; it is a known and explicitly discussed design trade-off.
+The failure is easiest to explain by first isolating a related phenomenon: the failure of \emph{transitivity}, and then observing that a failure of transitivity can be converted into a failure of subject reduction.
+
+Informally, subject reduction says that replacing a subterm by a definitionally equal one preserves type correctness.
+Carneiro explains the connection as follows: if subject reduction held for Lean's algorithmic definitional equality, then one could use reduction under nested identity functions to \emph{derive} transitivity of definitional equality; applying a counterexample to transitivity then yields a counterexample to subject reduction.
+
+\subsection{Algorithmic equality and subject reduction in Lean}\label{subsec:algorithmic_equality}
+
+To understand the cause of subject reduction failure in Lean, it is essential to distinguish between an \emph{ideal} notion of definitional equality, as it appears in metatheoretic accounts of dependent type theory, and the \emph{algorithmic} equality implemented by Lean's kernel.
+The ideal definitional equality is transitive and enjoys subject reduction, but is not decidable in general.
+Lean therefore relies on a decidable approximation, which is sufficient for type checking but does not satisfy all classical metatheoretical properties.
+
+Two features of Lean's algorithmic equality are particularly relevant for the counterexamples discussed in this chapter: \emph{subsingleton elimination} and \emph{proof irrelevance}.
+A type is a subsingleton if it has at most one inhabitant.
+In such types, the specific choice of inhabitant carries no computational information.
+Lean exploits this by allowing eliminations that ignore distinctions between inhabitants of subsingleton types.
+Propositions are the canonical example, but quotient types that collapse all elements into a single equivalence class also behave as subsingletons.
+
+Proof irrelevance is the principle that any two proofs of the same proposition are considered equal.
+This means that proofs are treated as computationally irrelevant: reduction is permitted to erase or ignore proof arguments.
+Together with subsingleton elimination, this allows definitional equality to identify terms that differ only in proof components.
+
+These features significantly improve proof ergonomics, in particular by enabling quotient constructions to compute definitionally.
+At the same time, they allow algorithmic definitional equality to be non-transitive, and it is this loss of transitivity that ultimately leads to failures of subject reduction in Lean's kernel.
+
+% subsection definitional equality (end)
+
+\subsection{Transitivity failure implies reduction failure}\label{sub:transitivity_failure_implies_reduction_failure} % (fold)
+
+Here, $\Leftrightarrow$ denotes Lean's algorithmic definitional equality.
+Let $\alpha$, $\beta$, and $\gamma$ be types. Suppose these types form a counterexample to transitivity, meaning that we have equivalences $\Gamma \vdash \alpha \Leftrightarrow \beta$ and $\Gamma \vdash \beta \Leftrightarrow \gamma$, but no equivalence spanning both: $\Gamma \vdash \alpha \nLeftrightarrow \gamma$. 
+We can construct a term whose reduction does not preserve typing:
+
+Let $e:\gamma$ be an inhabitant of $\gamma$, then we can see
+\begin{itemize}
+  \item $\Gamma \vdash \id_{\beta} e : \beta$ since $\Gamma \vdash \beta \Leftrightarrow \gamma$
+  \item $\Gamma \vdash \id_{\alpha}(\id_{\beta} e) : \alpha$ since $\Gamma \vdash \alpha \Leftrightarrow \beta$
+  \item However, $\Gamma \nvdash \id_{\alpha} e : \alpha$, because we have that $\Gamma \vdash \alpha \nLeftrightarrow \gamma$
+\end{itemize}
+
+However, we can clearly reduce $\id_{\beta} e \rightsquigarrow e$.
+This shows that subject reduction fails if whenever transitivity fails.
+
+% subsection Transitivity failure implies reduction failure (end)
+
+\subsection{The role of quotients}\label{sub:the_role_of_quotients} % (fold)
+
+Carneiro points out a particularly compact source of non-transitivity for Lean: quotients of propositions.
+This construction is not practically useful.
+A proposition already behaves like a subsingleton, so quotienting it does not "identify" anything new, but it is technically admissible in Lean and exposes a characteristic interaction between quotients, subsingleton elimination, and proof irrelevance.
+
+Let $P : \Prop$ be a proposition and assume it is inhabited by a proof $p : P$.
+Since $P$ is a proposition, it is proof-irrelevant in Lean: any two proofs of $P$
+are indistinguishable for computational purposes.
+
+Now fix a binary relation
+\[
+  r : P \ra P \ra \Prop.
+\]
+
+Consider the quotient type
+\[
+  Q := \Quot\, r.
+\]
+Because $P$ is a subsingleton (at most one proof up to proof irrelevance), the
+quotient $Q$ is again a subsingleton in the sense that any two
+elements of $Q$ are equal.
+
+Now fix a target type $\alpha : \Type$ (Carneiro writes $\alpha : U_1$) and a function
+\[
+  f : P \ra \alpha
+\]
+together with a proof that $f$ respects $r$:
+\[
+  H : \forall x\,y : P,\; r\,x\,y \ra f\,x = f\,y.
+\]
+This is the standard well-definedness condition required to define a function out
+of a quotient.
+
+Using Lean's quotient eliminator, we obtain
+\[
+  \text{lift}_r(f,H) : Q \ra \alpha,
+\]
+i.e.\ in Lean notation \mintinline{lean4}{Quot.lift f H : Quot r → α}.
+
+A crucial point is that \mintinline{lean4}{Quot.lift} computes \emph{only on constructor
+forms}. Concretely, for a representative $h : P$ we have the definitional (iota)
+reduction
+\[
+  \text{lift}_r(f,H)\bigl(\Quot.mk\, r\, h\bigr) \;\equiv\; f\,h.
+\]
+This is the expected computational rule: to evaluate the lifted function on a
+quotient value introduced by \mintinline{lean4}{Quot.mk}, we apply $f$ to the representative.
+
+However, for an arbitrary quotient element $q : Q$, there is no reduction rule:
+\[
+  \text{lift}_r(f,H)\,q \quad \text{does not reduce further.}
+\]
+This asymmetry is inherent to quotients: computation is syntax based and only
+fires when the argument explicitly contains \mintinline{lean4}{Quot.mk}.
+
+Since $Q$ is a subsingleton, we can pick any representative $h : P$
+and obtain the equality
+\[
+  e : q = \Quot.mk\, r\, h.
+\]
+Since proofs are computationally irrelevant, this equality can be used
+to substitute $q$ with \mintinline{lean4}{Quot.mk r h}.
+Although it only reduces on \mintinline{lean4}{Quot.mk}, we are allowed to replace an arbitrary $q$ by a constructor form because we are working with subsingletons.
+
+Let $q : Q$ and $h : P$. Then:
+\begin{align*}
+  \text{lift}_r(f,H)\,(\Quot.mk\, r\, h) &\;\equiv\; f\,h
+  &&\text{(by the computation rule of \mintinline{lean4}{Quot.lift})}
+\end{align*}
+and, because $Q$ is a subsingleton, Lean's conversion procedure may also accept
+\[
+  \text{lift}_r(f,H)\,q \;\equiv\; \text{lift}_r(f,H)\bigl(\Quot.mk\, r\, h\bigr)
+\]
+in contexts where subsingleton elimination and proof irrelevance allow $q$ to be treated
+as definitionally interchangeable with \mintinline{lean4}{Quot.mk r h}.
+
+These two steps do not compose transitively at the algorithmic level.
+We have:
+\[
+  \text{lift}_r(f,H)\,q
+  \;\equiv\;
+  \text{lift}_r(f,H)\bigl(\Quot.mk\, r\, h\bigr)
+  \;\equiv\;
+  f\,h,
+\]
+but Lean will fail to conclude directly that
+\[
+  \text{lift}_r(f,H)\,q \;\equiv\; f\,h.
+\]
+
+This is the counterexample: there is a chain of conversions from
+\mintinline{lean4}{Quot.lift f H q} to \mintinline{lean4}{f h}, but the kernel's conversion
+rules do not treat definitional equality as transitive in the presence of the
+additional reasoning principles (subsingleton elimination and proof irrelevance) that are
+used to justify the intermediate step.
+
+Put differently, the conversion checker can justify that $q$ is interchangeable with a
+constructor form (because $Q$ is a subsingleton), and it can justify that \mintinline{lean4}{Quot.lift}
+computes on constructor forms, but it cannot always combine these justifications into a
+single definitional equality judgment.
+
+Carneiro emphasizes that quotients of propositions are not a practically important feature:
+they rarely arise in everyday formalization, and quotienting a proposition does not buy
+anything because propositions are already subsingletons.
+
+This example isolates, in an especially simple form, the mechanism that also underlies
+more practically relevant counterexamples: the interaction between (i) computation rules
+that are syntax-directed (such as the $\iota$-rule for \mintinline{lean4}{Quot.lift}), and (ii)
+principles that treat proofs and subsingleton structure as computationally irrelevant.
+% subsection the role of quotients (end)
+
+
+\section*{Practical Consequences}
+
+
+\section{Practical comparison between Lean and Rocq}\label{sec:practical_comparison_between_lean_and_rocq} % (fold)
+
+The purpose of this section is to illustrate how the treatment of quotient types and equality affects the structure of everyday formalization tasks.
+The example chosen, constructing the integers from pairs of natural numbers, is deliberately simple and mathematically uncontroversial precisely for this reason.
+It highlights differences in proof overhead rather than differences in mathematical complexity.
+The contrast observed here persists in larger developments.
+
+We demonstrate this through example, as the actual effect of this problem is not accurately captured by a description alone.
 We will use pairs of naturals to model the integers with the relation
-
 \[
   (a, a') \sim (b, b') :\Leftrightarrow a + b' = b + a'
 \]
+and define addition on the quotient by element-wise addition of representatives.
 
-and define addition on the quotient.
-Full working source code for the example can be found in appendix~\ref{chap:setoid_hell_code} as well as the associated GitHub repository.
-In lean the construction uses the language primitive \lstinline|Quot| over \lstinline|Setoid|.
+For completeness, we record that this is, in fact, an equivalence relation.
+To see that the quotient is in fact equivalent to the integers, consider the maps: 
+\[
+  \N \times \N / ~ \ra \Z :\; [(a,b)] \mapsto a - b
+\]
+which is well defined with respect to $~$, and its inverse
+
+\[
+\begin{aligned}
+  \iota : \mathbb{Z} &\longrightarrow (\mathbb{N} \times \mathbb{N}) / {\sim} \\
+  x &\longmapsto
+  \begin{cases}
+    [(x,0)] & \text{if } x \ge 0, \\
+    [(0,|x|)] & \text{otherwise.}
+  \end{cases}
+\end{aligned}
+\]
+
+The full working source code for the example can be found in the associated GitHub repository at \mintinline{text}{src/Src/SetoidHell.lean} and \mintinline{text}{src/SetoidHell.v}.
+In Lean, the construction uses the language primitive \mintinline{text}{Quot} over \mintinline{text}{Setoid}.
 
 \begin{listing}[H]
 \begin{minted}{lean4}
@@ -239,11 +806,11 @@ instance int_setoid : Setoid (ℕ × ℕ) where
 
 def ℤ' : Type := Quot int_setoid
 \end{minted}
-\caption{Turning an equivalence relation into a quotient type using \lstinline|Quot| and \lstinline|Setoid|.}
+\caption{Turning an equivalence relation into a quotient type using \mintinline{text}{Quot} and \mintinline{text}{Setoid}.}
 \label{lst:lean-equiv-setoid}
 \end{listing}
 
-Then we lift the addition of naturals to the quotient type using Lean's \lstinline|Quot.lift| function.
+Then we lift the addition of naturals to the quotient type using Lean's \mintinline{text}{Quot.lift} function.
 
 \begin{listing}[H]
 \begin{minted}{lean4}
@@ -264,15 +831,18 @@ def zadd : ℤ' → ℤ' → ℤ' :=
 
 instance : Add ℤ' := ⟨zadd⟩
 \end{minted}
-\caption{Lifting addition of the carrier type to the quotient type using \lstinline|Quot.lift|.}
+\caption{Lifting addition of the carrier type to the quotient type using \mintinline{text}{Quot.lift}.}
 \label{lst:lean-lift-using-quot}
 \end{listing}
 
-The type $\Z'$ is a genuine new type of integers and \lstinline|zadd| is a genuine function $\Z' \ra \Z' \ra \Z'$.
+The type $\Z'$ is a genuine new type of integers and \mintinline{text}{zadd} is a genuine function $\Z' \ra \Z' \ra \Z'$.
 The "price" for this type was paid exactly once when we showed well-definedness.
+After this point, the equivalence relation no longer appears explicitly in the type of functions or lemmas involving $\Z'$.
+In particular, the kernel's notion of definitional equality suffices to identify equivalent representatives during computation, and no further proof obligations related to \mintinline{text}{int_rel} are generated using this type.
 
-In Rocq, the idea is the same, but we stay within setoids.
-We treat the type \lstinline|nat * nat| as a setoid and must show properness for all operations with respect to the equivalence.
+We now contrast this construction with its analogue in Rocq.
+While the underlying idea is the same, the absence of native quotient types at the kernel level leads to a different formal structure.
+Instead of constructing a new type of integers, we continue to work with the carrier type \mintinline{text}{nat * nat} equipped with an explicit equivalence relation.
 
 \begin{listing}[H]
 \begin{minted}{coq}
@@ -294,7 +864,7 @@ Add Relation (nat * nat) int_rel
 \label{lst:coq-define-setoid}
 \end{listing}
 
-Now \lstinline|nat * nat| is "the integers", but there is no new quotient type, only an equivalence relation.
+Now \mintinline{text}{nat * nat} is "the integers", but there is no new quotient type, only an equivalence relation.
 To define addition as an operation we define addition on representatives and show that this extends to a proper morphism on the equivalence relation.
 
 \begin{listing}[H]
@@ -310,13 +880,17 @@ Proof. Admitted.
 \label{lst:coq-proper-morph}
 \end{listing}
 
-The "integers" are still \lstinline|nat * nat|.
-To use them as integers, we must constantly tell Coq that our operations are proper with respect to \lstinline|int_rel|.
+Any function intended to operate on the quotient must be accompanied by a proof that it respects the equivalence relation.
+This includes not only arithmetic operations such as addition and multiplication, but also projections, recursive definitions, and auxiliary constructions.
+As a result, the equivalence relation remains present at every stage of the development.
+
+The "integers" are still \mintinline{text}{nat * nat}.
+To use them as integers, we must constantly tell Rocq that our operations are proper with respect to \mintinline{text}{int_rel}.
 Any new function you define (opp, mul, projections, etc.) needs its own proper proof.
-When rewriting in proofs, we must use \lstinline|setoid_rewrite| (or similar) rather than plain rewrite.
-There is never get an actual quotient type $\Z$ with a projection from \lstinline|nat * nat|.
+When rewriting in proofs, we must use \mintinline{text}{setoid_rewrite} (or similar) rather than plain rewrite.
+There is never an actual quotient type $\Z$ with a projection from \mintinline{text}{nat * nat}.
 The equivalence relation follows this construction along forever.
-That constant overhead (extra instances, propers, setoid rewrite) is what people mean by setoid hell.
+That constant overhead (extra instances, properness, setoid rewrite) is what people mean by setoid hell.
 
 Here is a proof involving setoid rewrites. We show that the addition we have defined is commutative:
 
@@ -340,201 +914,284 @@ Proof.
   apply add_pair_comm.
 Qed.
 \end{minted}
-\caption{Proff that \lstinline|add_pair_Proper| is commutative.}
+\caption{Proof that \mintinline{text}{add_pair_Proper} is commutative.}
 \label{lst:nat-induction}
 \end{listing}
 
-% How proof assistants implement extensionality determines which type of complications the developing mathematicians face.
+While the proof above is short, it is representative.
+Even for a property as elementary as commutativity of addition, the proof must explicitly manage the equivalence relation via setoid rewriting.
+As developments grow, such patterns repeat frequently, and the cumulative effect becomes significant.
+It is this persistent, structural overhead, rather than any individual proof obligation, that is commonly referred to as setoid hell.
 
-% \begin{paracol}{2}
-% \begin{minted}
-% code left
-% \end{minted}
-%
-% \switchcolumn
-%
-% \begin{minted}
-% code right
-% \end{minted}
-% \end{paracol}
-
-
-
-% section setoid hell (end)
-
-
-\section{implementations of extensionality(working title)}\label{sec:implementations_of_extensionality} % (fold)
-
-comparing lean and Rocq with respect to metatheoretical properties that the rocq people care about.
-
-% Go by the following citations
-
-\cite[lean4/src/kernel/quot.h at master (at time of writing)]{lean4_source}
-What Lean implements is Quot, quot lift, quot ind, and quot mk.
-
-% what are these, take a look at the adjacent quot.cpp file
-
-% section implementations of extensionality (end)
-
-
-\section{SR failures}\label{sec:sr_failures} % (fold)
-
-Lean, by its own admission fails at subject reduction.
-We show how it fails maybe by the example shown in \cite[Carneiro's Thesis]{carneiro_2019}.
-This is not the only example, but many of known examples are built in a similar manner.
-We take it as a good representative of
-
-% TODO: get some sr failures together
+As discussed in the previous sections, avoiding this overhead by internalizing equivalence into definitional equality shifts the burden from user-level proofs to the metatheory of the kernel, illustrating the trade-off at the heart of this comparison.
 
 % section SR failures (end)
 
+\section{Synthesis}\label{sec:synthesis} % (fold)
+
+In summary, the phenomenon commonly referred to as setoid hell is best understood not
+as an isolated defect, but as a symptom of deeper design choices concerning
+equality and computation in dependent type theory.
+In particular, it is closely entangled with how quotient constructions are
+integrated into the system: whether reasoning modulo equivalence is handled
+externally, via explicit setoids, or internally, by extending definitional
+equality.
+
+Lean's support for quotient types at the kernel level improves proof ergonomics
+by allowing many constructions to compute definitionally.
+The resulting failures of transitivity and subject reduction are not accidental,
+but arise naturally from this design, in particular from the interaction between
+algorithmic equality, subsingleton elimination, and proof irrelevance.
+These trade-offs are accepted in Lean in order to support pragmatic
+formalization and to reduce the bookkeeping overhead associated with explicit
+equivalence relations.
+
+Rocq makes the opposite choice.
+By enforcing strong metatheoretical properties such as subject reduction and
+transitivity of definitional equality, it maintains a conservative and stable
+notion of computation.
+The cost of this choice is that reasoning modulo equivalence must be made
+explicit, leading to the phenomenon described as setoid hell.
+
+Seen in this light, setoid hell is not the defining difference between the two
+systems, but rather a visible consequence of their respective priorities.
+Lean and Rocq are optimized for different use cases: Lean emphasizes proof
+ergonomics and quotient reasoning, while Rocq prioritizes metatheoretical
+simplicity and guarantees about computation.
+Neither approach eliminates complexity; they relocate it to different parts of
+the system.
+
+% section Synthesis (end)
+
 % chapter Investigating Setoid Hell (end)
 
-\chapter{Exploring Lean through Implementation of a nontrivial Theorem}\label{chap:exploring_lean_through_implementation_of_a_nontrivial_theorem} % (fold)
+\chapter{Exploring lean through implementation of a nontrivial theorem}\label{chap:exploring_lean_through_implementation_of_a_nontrivial_theorem} % (fold)
 
+\section{Sylvester's theorem}\label{sec:sylvester_s_theorem} % (fold)
 
-\section{Sylvester's Theorem}\label{sec:sylvester_s_theorem} % (fold)
+To explore the practical aspects of proof assistants beyond toy examples, I implemented a proof of Sylvester's theorem in Lean.
+This theorem is sometimes also known as \emph{Sylvester's law of inertia}.
+The goal of this chapter is not merely to reproduce a known result, but to examine how a mathematically standard argument interacts with the abstractions, libraries, and proof engineering constraints of a modern proof assistant.
 
-To explore the practical side of proof assistants I implemented Sylvester's theorem in Lean.
+Formalizing a nontrivial theorem in a large library such as mathlib presents several challenges.
+One of the most prominent is the risk of duplication: a researcher may fail to locate an existing result and inadvertently reprove a theorem that is already available in a more general form.
+I encountered this issue firsthand when I produced a proof of the existence of an orthogonal basis for the specific use case at hand, only to later discover that mathlib already contained a more general and reusable version of the same result.
 
-There are multiple challenges to proof formalization and multiple approaches to managing them.
+Comparing the two proofs side by side reveals that they follow essentially the same mathematical structure.
+However, the mathlib proof is formulated at a higher level of generality and is therefore strictly stronger.
+It is also slightly more concise, reflecting both the maturity of the library and the cumulative effect of reusable abstractions.
+This comparison illustrates an important practical lesson: successful formalization in Lean depends as much on leveraging existing library content as on constructing proofs from first principles.
 
-One major risk of the mathlib project is the problem of duplication.
-A researcher might not find a theorem they need immediately and erroneously conclude that it has not been formalized yet; recreating it in the process.
-I also ran into this problem when I accidentally produced a proof of the existence of an orthogonal basis.
-Comparing the two versions side by side reveals that they follow the same essential proof structure, however the version of mathlib is more generic, and therefore strictly stronger.
-Mathlib's proof is also slightly more consise, which merits some attention.
-
-%% comparison of exists_orthogonal_basis
-
-Cite the theorem in the form that we prove, big picture overview of the proof,
-side by side comparison of "semantic" proof vs "formal" proof (vs formal
-proof?)
-
-
-
-\begin{redbox}
-  The original theorem is over 170 years old but remains reasonably legible to
-  modern readers. Perhaps less familiar to the modern reader is the
-  presentation of the theorem, where the statement is entirely contained in the
-  title of the paper, and the body of the paper is devoted entirely to the
-  proof of the statement.
-
-  The title reads:
-  \begin{quotation}
-    A DEMONSTRATION OF THE THEOREM THAT EVERY HOMOGENEOUS QUADRATIC POLYNOMIAL
-    IS REDUCIBLE BY REAL ORTHOGONAL SUBSTITUTIONS TO THE FORM OF A SUM OF
-    POSITIVE AND NEGATIVE SQUARES. [sic.]
-  \end{quotation}
-
-  % TODO: actually read the proof and see if it holds and is equivalent to the modern statement?
-
-
-  We'll be following the more modern approach of Lang, whose theorem reads like this:
-
-\end{redbox}
+We now recall the statement of Sylvester's theorem in the form used in this development.
 
 \begin{theorem}[Sylvester]
-  Let $E$ be a real vector space with a nondegenerate bilinear form $g$.
-  There exists an integer $r\in \Z$, $r \geq 0$, if $\{v_1,\dots,v_n\}$ is an
-  orthogonal basis of $E$ then for $r$ of them we have $v_i^2 > 0$ and for
-  $n-r$ of them $v_i^2 < 0$.
+  Let $E$ be a real vector space equipped with a symmetric, nondegenerate bilinear form $g$.
+  There exists an integer $r\in \Z$, such that for every $g$-orthogonal basis $\{v_1,\dots,v_n\}$ of E, exactly $r$ of the values $g(v_i,v_i)$ are positive and $n-r$ of them are negative.
 \end{theorem}
 
 \begin{proof}
+  Let $v_1,\dots,v_n$ and $w_1,\dots,w_n$ be two orthogonal bases of $E$. Define
 
-  Suppose $v_1,\dots,v_n$ and $w_1,\dots,w_n$ were two orthogonal bases.
-
-  Let $a_i = v_i^2$ and $b_i = w_i^2$,\\
-  of which $a_1,\dots,a_r > 0$, and $a_{r+1},\dots,a_n < 0$ \\
-  and $b_1,\dots,b_r > 0$, bnd $b_{r+1},\dots,b_n < 0$ for some integers $r,s$.
+  \[
+    a_i = v_i^2 \qquad b_i = w_i^2,
+  \]
+  Suppose that $a_1,\dots,a_r > 0$ and $a_{r+1},\dots,a_n < 0$,
+  and similarly that $b_1,\dots,b_s > 0$, and $b_{s+1},\dots,b_n < 0$ for some integers $r,s$.
 
   It suffices to show that $r=s$.
-
-  To that end we'll show that the set $\{v_1,\dots,v_r, w_{s+1},\dots, w_n\}$
-  is linearly independent. Because then we get that $r + (n-s) \leq n$, and
-  therefore $r \leq s$ and by symmetry, $r=s$.
+  To that end we'll show that the set
+  \[
+    \{v_1,\dots,v_r, w_{s+1},\dots, w_n\}
+  \]
+  is linearly independent. This implies that $r + (n-s) \leq n$, and
+  therefore $r \leq s$ and by symmetry, $s \leq r$, so $r=s$.
 
   Suppose that
-
   \[
     (x_1 v_1 + \dots + x_r v_r) + (y_{s+1} w_{s+1} + \dots + y_n w_n) = 0
   \]
-
-  Then
-
+  Rearranging gives
   \[
-    x_1 v_1 + \dots + x_r v_r =  - y_{s+1} w_{s+1} - \dots - y_n w_n
+    x_1 v_1 + \dots + x_r v_r =  - (y_{s+1} w_{s+1} + \dots + y_n w_n)
   \]
-
-  squaring both sides yields
-
+  Applying the bilinear form to both sides and using orthogonality yields
   \[
     x_1^2 a_1 + \dots + x_r^2 a_r =  y_{s+1}^2 b_{s+1} + \dots + y_n^2 b_n
   \].
 
-  The left hand side is $\geq 0$ and the right hand side is $\leq 0$, and
-  therefore 0. It follows that all coefficients are 0, which shows that they
-  are linearly independent.
+  The left hand side is nonnegative and the right hand side is nonpositive, and
+  therefore zero. It follows that all coefficients vanish.
+  Therefore the set is linearly independent.
 
 \end{proof}
 
 
-\begin{redbox}
-  The original reference is \cite{Sylvester_1852}.
+The original result is due to \cite{Sylvester_1852}.
 
-  It is presented in \cite[Thm.~4.1]{Lang_2002} in a modern way.
-
-  Also \cite[Theorem 10.43]{Norman_1986}, which is what's cited on wikipedia.
-\end{redbox}
+A modern presentation can be found in \cite[Thm.~4.1]{Lang_2002}.
 
 % section Sylvester's Theorem (end)
+
+\section{Implementation of Sylvester's theorem in Lean}\label{sec:implementation_of_sylvester_s_thorem_in_lean} % (fold)
+
+This section documents the Lean development contained in \mintinline{text}{Src/Sylvester.lean}.
+
+In the Lean file, the final theorem is expressed in terms of predicates characterizing \emph{positive} and \emph{negative} subspaces for the form (i.e. vectors $v$ with $g(v,v) > 0$/$g(v,v)<0$).
+Concretely, the development introduces and uses predicates (named \mintinline{text}{PosP} and \mintinline{text}{NegP} in the code) that characterize the positive and negative basis vectors, respectively, for a given basis.
+The statement of Sylvester's theorem is then expressed by producing positive and negative subspaces of maximal dimension and proving that their dimensions are independent of the construction.
+
+Conceptually, the Lean proof follows the same outline as the paper proof:
+
+\begin{enumerate}
+  \item Define the notions of positivity and negativity that are stable under the algebraic manipulations needed in the proof (\mintinline{text}{PosP} and \mintinline{text}{NegP}).
+  \item Establish the "heavy lifting" lemmas: linear independence of the subspaces and the dimension bookkeeping needed to compare different decompositions.
+  \item Use those lemmas to assemble the Sylvester statement with relatively little additional work: once the library of intermediate results exists, the final theorem is essentially an exercise in applying them in the right order.
+\end{enumerate}
+
+\subsection*{The good, the bad, and the ugly}
+
+First, the choice to introduce dedicated positivity/negativity predicates was effective.
+These predicates provide a good handle on the linear-algebraic objects in the proof (subspaces, orthogonal complements, reindexing of bases).
+As a consequence, the core proof steps can be phrased in a way that is close to the mathematical argument:
+one proves general lemmas about \mintinline{text}{PosP} and \mintinline{text}{NegP} once, and then reuses them.
+
+Second, once the infrastructure lemmas are established, the proof of the theorem itself is strikingly short.
+This is a recurring pattern in Lean developments: the proof burden is front-loaded into reusable lemmas, after which the final theorem reads almost like the outline of the paper proof.
+
+Third, at the conceptual level the Lean proof resembles the paper proof closely.
+The formal argument is a direct encoding of the same decomposition ideas and dimension comparisons.
+This is a strong indication that the formalization captures the intended mathematics.
+
+The main friction point was localized in the \emph{orthogonality reindexing lemma}.
+In informal mathematics, one routinely says "rename the basis vectors" or "reorder the orthogonal family" without comment.
+In Lean, this step manifests as explicit transports and reindexing proofs.
+
+The underlying content is trivial ("a permutation does not break orthogonality"), but the formalization is nontrivial:
+one must explicitly spell out the permutation/reindexing map to restate orthogonality in the new presentation.
+This is not a defect in Lean per se.
+Still, it is fair to record it as an implementation drawback.
+
+The most problematic part of the file is the presence of a single large auxiliary result, the "monster lemma", that is (i) technically heavy, (ii) stronger than what the final theorem actually needs, and (iii) uses awkward left/right bookkeeping.
+
+The lemma in question is called \mintinline{text}{special_sum}, and states that the positive vectors of one basis together with the negative vectors of another form a linearly independent set.
+This is too strong because, given that both halves themselves are subsets of bases, and are therefore internally linearly independent, it is unnecessarily involved to prove linear independence for the entire set.
+It would suffice to show that there is no linear dependence \emph{between} the two to deduce the presented statement.
+Proving something strictly more general than required is often desirable, but here it comes at the cost of significantly increased proof complexity without additional benefit.
+
+Additionally, modelling the set explicitly as a sum type was a poor choice, as making a statement about one of the sets would inevitably lead to proof duplication when making the same statement about the other.
+These duplications were almost verbatim, except for interchanged signs (for positive and negative) and left/right specifications to single out one of the two.
+From a maintenance point of view, this is the part of the development that is least robust and also the least pleasant to read.
+
+\subsection*{Conclusion and prospective refactoring}
+
+Overall, the formalization demonstrates that the mathematical argument for Sylvester's theorem can be encoded in Lean in a way that remains close to the paper proof.
+
+At the same time, the development also highlights a clear refactoring target: the monster lemma should be reworked.
+A more principled approach would be to shift the proof architecture toward \emph{span-based} arguments: consider the spans of the positive and negative directions, and prove directly that their intersection is trivial.
+This reorganizes the critical comparison step into a statement that is intrinsically symmetric and reduces (or eliminates) the recurring left/right issues.
+
+% section Implementation of Sylvester's theorem in Lean (end)
 
 
 \section{Comparison to existing theorem}\label{sec:comparison_to_existing_theorem} % (fold)
 
-I accidentally implemented the existence theorem of an orthogonal basis. This
-invites for comparison. The underlying structure of the theorem is essentially
+During development, I independently implemented the existence theorem of an orthogonal basis.
+This invites comparison. The underlying structure of the theorem is essentially
 the same. It requires an existence proof of one nonisotropic vector, and then
 proceeds by induction on the dimension.
 
+My implementation can be found in the source code directory of the associated repository in the \mintinline{text}{Basic.lean} file.
+The mathlib implementation is, as of time of writing, in \mintinline{text}{Mathlib/LinearAlgebra/QuadraticForm/Basic.lean}.
+Both are coincidentally named \mintinline{text}{exists_orthogonal_basis}.
+
+Both proofs proceed by induction on the dimension of $E$.
+In the successor step, one chooses a vector $v$ with $g(v,v) \neq 0$, decomposes $E$ as the direct sum of $span(v)$ and its orthogonal complement, applies the induction hypothesis on the complement with the restricted form, and finally concatenates $v$ with the orthogonal basis obtained by induction.
+The formalizations differ primarily in how the "choose $v$ with $g(v,v) \neq 0$" step is arranged and in how the decomposition and concatenation lemmas are sourced.
+
+Both proofs hinge on the same critical construction: extending an orthogonal basis of the orthogonal complement by a single non-isotropic vector.
+Formally, this is realized via \mintinline{text}{Basis.mkFinCons}, which serves as the Lean analogue of adjoining a vector to a basis in the informal argument.
+
+The mathlib implementation does not assume nondegeneracy of the bilinear form a priori.
+Instead, it explicitly separates the trivial case \mintinline{text}{B = 0}, producing an orthogonal basis immediately, and only invokes the inductive argument when a non-null vector exists.
+
+The mathlib lemma \mintinline{text}{exists_orthogonal_basis} assumes an instance \mintinline{text}{[Invertible (2 : K)]}, reflecting the standard algebraic precondition that the characteristic of $K$ is not $2$.
+In my development, the field $K$ already satisfies stronger assumptions (that $K$ is a linear ordered field), so the invertibility of $2$ is immediate.
+However, Lean's typeclass system does not automatically synthesize an instance of \mintinline{text}{Invertible (2 : K)} from the stronger assumption.
+The required instance can be provided explicitly by taking $\tfrac{1}{2}$ as the inverse of $2$, with the verification reduced to simplification:
+
+\begin{minted}{lean4}
+instance : Invertible (2 : K) where
+  invOf := (1 / 2 : K)
+  invOf_mul_self := by simp
+  mul_invOf_self := by simp
+\end{minted}
+
+In summary, the two scripts formalize the same classical induction argument, and both ultimately hinge on the same two constructions: selecting a non-isotropic vector and concatenating it with an orthogonal basis of its orthogonal complement.
+The principal difference is one of abstraction boundary.
+My proof is specialized to the nondegenerate case and externalizes several steps into auxiliary lemmas, while the mathlib proof isolates edge cases ($B=0$), requires only symmetry plus invertibility of $2$. This makes the library result more reusable and, in practice, reduces the amount of bespoke code needed for later use.
+
 % section Comparison to existing theorem (end)
 
+\section{Time-travelling bugs}\label{sec:timetravelling_bugs} % (fold)
 
-\section{timetravelling bugs}\label{sec:timetravelling_bugs} % (fold)
+This section is meant as a light-weight addendum to the preceding material.
+During development a few unexpected and interesting "bugs" came to light.
+While they are not substantive obstacles to development, they reveal much about the internal structure of Lean by the way it fails.
+It is therefore worthwhile to look at them and perform a post-mortem analysis of the bugs.
+
+The title of this section already hints at the recurring pattern of the two problems we will take a look at.
+We discuss situations during the writing of a proof in which either a newly written line invalidates the correctness of previous lines, thereby sending a bug "back in time",
+or a line is marked as incorrect until a later line justifies it, thereby receiving a bug "from the future".
+In both cases, the underlying mechanisms that cause this kind of behavior are not erroneous, they are, in fact, fully justified in their behavior.
+The features in question are type inference and implicit universe variables.
+
+The first example is from the development process of Sylvester's theorem. The second example is only presented by description, as the original has been lost to the text editor.
+
+\begin{minted}{lean4}
+lemma kernel_imp_nonkernel_basis_coeff_zero'
+    (w : E) (hw : w ∈ LinearMap.ker b) (ortho : b.iIsOrtho v) (hb : b.IsSymm) :
+    ∀ i, i ∉ A v b → (v.repr w) i = (0 : K) := by
+  intro i hi
+  simp only [A, Finset.mem_filter, Finset.mem_univ, true_and] at hi
+  push_neg at hi
+  have h : b (v i) ≠ 0 := by
+    intro h₀
+    rw [h₀] at hi
+    simp only [LinearMap.zero_apply, ne_eq, not_true_eq_false] at hi
+  have hw0 : b w = 0 := LinearMap.mem_ker.mp hw
+  have w_eq : ∑ i , (v.repr w) i • v i = w :=  v.sum_repr w
+  apply congr_arg b at w_eq
+  rw [map_sum b] at w_eq
+  simp only [map_smul] at w_eq
+  rw [hw0] at w_eq
+  set B : Finset n := (Finset.univ : Finset n).filter (fun i => b (v i) (v i) ≠ 0)
+  have hB : B ⊆ Finset.univ := by simp
+  rw [← Finset.sum_subset hB _] at w_eq
+  swap
+  · simp [B]
+    intro j hj
+    apply ker_imp_nullform _ _ _ at hj
+\end{minted}
+
+During the development of this lemma, a single missing argument to an \mintinline{text}{apply} tactic caused Lean to mark not only the current line as incorrect, but also every preceding line in the proof that contained the \mintinline{text}{have} tactic.
+At first glance this appeared as though a newly written line had retroactively invalidated earlier, already typechecked code.
+In reality, the behavior is a consequence of Lean's elaboration strategy: earlier lines were accepted only provisionally, with unresolved metavariables that were later constrained in an incompatible way.
+
+Once those constraints could not be satisfied, the elaborator was forced to reject the entire block.
+From the user's perspective, however, this manifests as a proof that "breaks backwards in time", a phenomenon that is initially confusing but becomes predictable once the role of metavariables and delayed constraint solving is understood.
+
+The second example concerns a definition involving an implicit universe variable that was initially insufficiently constrained.
+When the line was first written, Lean reported an error indicating that it could not determine the universe level of the type involved.
+No local modification to the line resolved the issue.
+
+However, after adding a later definition that imposed an explicit type constraint, the earlier line was suddenly accepted without further changes.
+From the user's perspective, this appeared as though the correctness of the earlier definition depended on information provided later in the file.
+This behavior is a consequence of Lean's elaboration strategy, which allows metavariables for implicit arguments and universe levels to remain unresolved until enough contextual information becomes available.
 
 % section timetravelling bugs (end)
 
 % chapter Exploring Lean through Implementation of a nontrivial Theorem (end)
 
-\section{AI Usage}\label{sec:ai_usage} % (fold)
-
-This is an AI declaration stating to what extent generative AI was used in this thesis.
-
-AI was used in writing the software accompanying this thesis.
-not used to generate either parts or entire proofs. not for lack of trying. it's not very good at keeping coherent across longer passages of lean code.
-generated code was used as guideline for proofs. this entailed some work checking if the generated theorems actually existed, which was hit or miss.
-
-No AI was used in the writing of this thesis. The text herein has been written by hand by the author.
-
-AI was used as a research tool in place of Google searches.
-
-The used tools were OpenAI's ChatGPT, Perplexity AI's search tool and Lean community's own Moogle AI search tool.
-
-% section AI Usage (end)
-
 \printbibliography[title={Bibliography}]
 
-\appendix
-
-\chapter{Setoid Hell Code}\label{chap:setoid_hell_code} % (fold)
-
-\section{SetoidHell.lean}
-\inputminted{lean4}{../src/Src/SetoidHell.lean}
-
-\section{SetoidHell.v}
-
-\inputminted{coq}{../src/SetoidHell.v}
-
-% chapter Setoid Hell Code (end)
 \end{document}
